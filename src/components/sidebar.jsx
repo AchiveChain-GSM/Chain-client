@@ -37,8 +37,8 @@ function AddButton({ onClick }) {
   return (
     <button
       type="button"
-      onClick={onclick}
-      className="flex h-12 w-full items-center gap-3 rounded-lg px-4 py-3 text-sm bg-white"
+      onClick={onClick}
+      className="flex h-12 w-full items-center gap-3 rounded-lg bg-white px-4 py-3 text-sm"
     >
       <img src={plusIcon} alt="자료추가" />
       <span>자료 추가</span>
