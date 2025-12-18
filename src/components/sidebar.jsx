@@ -1,10 +1,11 @@
 import { useState } from 'react';
 
-import timelineIcon from '../../assets/icon/timeline.svg';
-import searchIcon from '../../assets/icon/search.svg';
-import recentIcon from '../../assets/icon/recent.svg';
-import bookmarkIcon from '../../assets/icon/bookmark.svg';
-import myIcon from '../../assets/icon/my.svg';
+import timelineIcon from '../assets/icon/timeline.svg';
+import searchIcon from '../assets/icon/search.svg';
+import recentIcon from '../assets/icon/recent.svg';
+import bookmarkIcon from '../assets/icon/bookmark.svg';
+import myIcon from '../assets/icon/my.svg';
+import plusIcon from '../assets/icon/plus.svg';
 
 const sidebarItems = [
   { id: 'timeline', label: '타임라인', icon: timelineIcon },
@@ -20,7 +21,7 @@ function SidebarItem({ label, icon, active, onClick }) {
       onClick={onClick}
       className={[
         'flex w-full items-center gap-3',
-        'h-12 px-4 py-3',   
+        'h-12 px-4 py-3',
         'rounded-lg',
         'text-sm transition-colors',
         active ? 'bg-[#2A2A2A] text-white' : 'text-white hover:bg-[#2A2A2A]',
@@ -32,12 +33,24 @@ function SidebarItem({ label, icon, active, onClick }) {
   );
 }
 
+function AddButton({ onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onclick}
+      className="flex h-12 w-full items-center gap-3 rounded-lg px-4 py-3 text-sm bg-white"
+    >
+      <img src={plusIcon} alt="자료추가" />
+      <span>자료 추가</span>
+    </button>
+  );
+}
 
 export default function Sidebar() {
   const [activeId, setActiveId] = useState('timeline');
 
   return (
-    <aside className="h-screen w-60 bg-[#1D1D1D] py-4">
+    <aside className="h-screen w-60 rounded-tr-lg bg-[#1D1D1D] py-4">
       <nav className="flex flex-col gap-3 px-6">
         {sidebarItems.map((item) => (
           <SidebarItem
@@ -48,8 +61,8 @@ export default function Sidebar() {
             onClick={() => setActiveId(item.id)}
           />
         ))}
+        <AddButton />
       </nav>
     </aside>
   );
 }
-
