@@ -17,5 +17,6 @@
 
 @theme {
   --color-bg:#1D1D1D;
-  --color-hover:#2A2A2A;
+  --color-select:#2A2A2A;
+  --color-hover:#191919;
 }
