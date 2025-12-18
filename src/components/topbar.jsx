@@ -13,7 +13,7 @@ const TopBar = () => {
         width: '100%',
         maxWidth: '1920px',
         height: '44px',
-        backgroundColor: '#111111',
+        backgroundColor: '#1D1D1D',
         borderBottom: '1px solid #2F3233',
         margin: '0 auto',
       }}
