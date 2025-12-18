@@ -1,8 +1,11 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo/logo-vertical-symbol.svg';
 import peopleShape from '../assets/peopleShape.svg';
 
 const TopBar = () => {
+  const navigate = useNavigate();
+
   return (
     <nav
       className="font-pretendard flex items-center justify-between px-6"
@@ -41,7 +44,10 @@ const TopBar = () => {
       </div>
 
       <div className="flex items-center">
-        <button className="transition-opacity hover:opacity-60">
+        <button
+          onClick={() => navigate('/profile')}
+          className="flex items-center justify-center transition-opacity hover:opacity-60"
+        >
           <img
             src={peopleShape}
             alt="Profile"
