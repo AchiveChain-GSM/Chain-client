@@ -3,9 +3,7 @@ import Topbar from './components/topbar.jsx';
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Topbar />} />
-      </Routes>
+      <Routes></Routes>
     </BrowserRouter>
   );
 }
