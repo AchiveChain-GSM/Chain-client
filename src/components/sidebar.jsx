@@ -24,7 +24,7 @@ function SidebarItem({ label, icon, active, onClick }) {
         'h-12 px-4 py-3',
         'rounded-lg',
         'text-sm transition-colors',
-        active ? 'bg-hover text-white' : 'text-white hover:bg-hover',
+        active ? 'bg-select text-white' : 'text-white hover:bg-hover',
       ].join(' ')}
     >
       <img src={icon} alt={label} className="h-4 w-4 shrink-0" />
