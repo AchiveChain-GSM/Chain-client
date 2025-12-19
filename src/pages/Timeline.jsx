@@ -1,4 +1,5 @@
 import TopBar from '../components/topbar';
+import Sidebar from '../components/Sidebar';
 import TimelineCard from '../components/TimelineCard';
 import { timelineDummy } from '../data/timelineDummy';
 
@@ -11,11 +12,11 @@ export default function Timeline() {
       {/* 🔹 Topbar 아래 영역 */}
       <div className="flex h-[calc(100vh-44px)] gap-4 p-4">
         {/* Sidebar */}
-        <aside className="w-56 shrink-0 rounded-xl bg-[#1D1D1D] p-4">
-          Sidebar
-        </aside>
+        <div className="w-56 shrink-0">
+          <Sidebar />
+        </div>
 
-        {/* Calendar */}
+        {/* Calendar (아직 임시) */}
         <section className="w-80 shrink-0 rounded-xl bg-[#1D1D1D] p-4">
           Calendar
         </section>
