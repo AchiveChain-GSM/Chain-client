@@ -71,7 +71,7 @@ export default function Calendar() {
     );
 
     return () => observer.disconnect();
-  }, []);
+  }, [calendarData]);
 
   return (
     <aside className="bg-bg flex h-screen w-[390px] flex-col overflow-hidden rounded-lg">
