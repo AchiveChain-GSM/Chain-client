@@ -86,7 +86,7 @@ export default function Calendar() {
             key={group.year}
             data-year={group.year}
             ref={(el) => (yearRefs.current[group.year] = el)}
-            className="mb-4"
+            className="flex flex-col gap-4 mb-4"
           >
             {group.months.map(({ year, month }) => (
               <CalendarMonth
