@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, useEffect } from 'react';
-import CalendarHeader from './CalendarHeader';
-import CalendarMonth from './CalendarMonth';
+import CalendarHeader from './calendarHeader';
+import CalendarMonth from './calendarMonth';
 
 const postExistedDays = [
   { year: 2025, month: 12, day: 13 },
