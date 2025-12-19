@@ -38,11 +38,15 @@ export default function CalendarMonth({
       if (prev.year !== year || prev.month !== month) {
         return { year, month, days: [day] };
       }
+
+      const isSelected = prev.days.includes(day);
+      const nextDays = isSelected
+        ? prev.days.filter((d) => d !== day)
+        : [...prev.days, day];
+
       return {
         ...prev,
-        days: prev.days.includes(day)
-          ? prev.days.filter((d) => d !== day)
-          : [...prev.days, day],
+        days: nextDays,
       };
     });
   };
