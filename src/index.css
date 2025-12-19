@@ -15,7 +15,7 @@
   }
 }
 
-@theme {
+:root {
   --color-bg:#1D1D1D;
   --color-select:#2A2A2A;
   --color-hover:#191919;
