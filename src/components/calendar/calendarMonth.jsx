@@ -15,8 +15,7 @@ export default function CalendarMonth({
   setSelected,
   postExistedDays,
 }) {
-  const monthSelected =
-    selected.year === year && selected.month === month;
+  const monthSelected = selected.year === year && selected.month === month;
 
   const lastDay = new Date(year, month, 0).getDate();
   const startDay = new Date(year, month - 1, 1).getDay();
@@ -53,21 +52,18 @@ export default function CalendarMonth({
       onClick={selectMonth}
       className={cn(
         'group w-fit rounded-lg px-3 py-3 transition-colors',
-        !monthSelected && 'hover:bg-hover',
+        monthSelected ? 'bg-hover' : 'hover:bg-hover',
       )}
-      style={{ backgroundColor: monthSelected ? '#191919' : undefined }}
     >
-      <div className="mb-3 text-xl font-semibold text-white">
-        {month}월
-      </div>
+      <div className="mb-3 text-xl font-semibold text-white">{month}월</div>
 
-      <div className="grid grid-cols-[repeat(7,44px)]">
+      <div className="grid grid-cols-[repeat(7,44px)] gap-y-[8px]">
         {cells.map((day, idx) =>
           day === null ? (
-            <div key={idx} className="h-[40px] w-[44px]" />
+            <div key={`empty-${idx}`} className="h-[40px] w-[44px]" />
           ) : (
             <button
-              key={day}
+              key={`day-${day}`}
               onClick={(e) => {
                 e.stopPropagation();
                 toggleDay(day);
@@ -77,12 +73,11 @@ export default function CalendarMonth({
               <div
                 className={cn(
                   'flex h-[32px] w-[36px] items-center justify-center rounded-lg transition-colors',
-                  monthSelected &&
-                    selected.days.includes(day) &&
-                    'bg-[#2a2a2a]',
+                  monthSelected && selected.days.includes(day) && 'bg-select',
                   monthSelected &&
                     !selected.days.includes(day) &&
-                    'hover:bg-[#151515]',
+                    'hover:bg-dayHover',
+                  !monthSelected && 'hover:bg-dayHover',
                 )}
               >
                 <span
