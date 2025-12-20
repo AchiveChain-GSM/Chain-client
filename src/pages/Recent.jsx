@@ -7,7 +7,7 @@ export default function Search() {
     <div className="min-h-screen w-full bg-[#0F0F0F] text-white">
       <TopBar />
 
-      <div className="flex h-[calc(100vh-44px)] gap-4 p-4">
+      <div className="flex h-[calc(100vh-54px)] gap-4 p-4">
         <div className="w-56 shrink-0">
           <Sidebar />
         </div>
