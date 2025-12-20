@@ -1,14 +1,21 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Login from './Login';
+import TopBar from './components/topbar';
 
 const App = () => {
   return (
     <Router>
-      <div style={{ backgroundColor: '#111111', minHeight: '100vh' }}>
+      <div
+        style={{
+          backgroundColor: '#111111',
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <TopBar />
         <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/" element={null} />
         </Routes>
       </div>
     </Router>
