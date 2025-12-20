@@ -24,7 +24,7 @@ function SidebarItem({ label, icon, active, onClick }) {
         'h-12 px-4 py-3',
         'rounded-lg',
         'text-sm transition-colors',
-        active ? 'bg-[#2A2A2A] text-white' : 'text-white hover:bg-[#2A2A2A]',
+        active ? 'bg-select text-white' : 'text-white hover:bg-hover',
       ].join(' ')}
     >
       <img src={icon} alt={label} className="h-4 w-4 shrink-0" />
@@ -50,7 +50,7 @@ export default function Sidebar() {
   const [activeId, setActiveId] = useState('timeline');
 
   return (
-    <aside className="h-screen w-60 rounded-tr-lg bg-[#1D1D1D] py-4">
+    <aside className="h-screen w-60 rounded-tr-lg bg-bg py-4">
       <nav className="flex flex-col gap-3 px-6">
         {sidebarItems.map((item) => (
           <SidebarItem
