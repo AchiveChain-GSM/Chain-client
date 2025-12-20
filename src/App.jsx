@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import TopBar from './components/topbar';
 
-const App = () => {
+export default function App() {
   return (
     <Router>
       <div
@@ -20,6 +20,4 @@ const App = () => {
       </div>
     </Router>
   );
-};
-
-export default App;
+}
