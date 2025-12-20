@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import logo from './assets/logo/logo-vertical-symbol.svg';
-import checkIcon from './assets/icon/check.svg';
+import logo from '../assets/logo/logo-vertical-symbol.svg';
+import checkIcon from '../assets/icon/check.svg';
 
 const Login = () => {
   const [email, setEmail] = useState('');
