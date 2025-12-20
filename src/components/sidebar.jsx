@@ -56,7 +56,7 @@ export default function Sidebar() {
   const navigate = useNavigate();
 
   return (
-    <aside className="bg-bg h-screen w-[234px] rounded-tr-lg py-4">
+    <aside className="bg-bg w-[234px] h-full rounded-tr-lg py-4">
       <nav className="flex flex-col gap-3 px-6">
         {sidebarItems.map((item) => (
           <SidebarItem
