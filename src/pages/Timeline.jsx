@@ -1,15 +1,16 @@
 import TopBar from '../components/topbar';
-import Sidebar from '../components/Sidebar';
+import Sidebar from '../components/sidebar';
 import TimelineCard from '../components/TimelineCard';
+import Calendar from '../components/calendar/calendar';
 import { timelineDummy } from '../data/timelineDummy';
 
 export default function Timeline() {
   return (
     <div className="min-h-screen w-full bg-[#0F0F0F] text-white">
-      {/* 🔹 Topbar */}
+      {/* Topbar */}
       <TopBar />
 
-      {/* 🔹 Topbar 아래 영역 */}
+      {/* Topbar 아래 영역 */}
       <div className="flex h-[calc(100vh-44px)] gap-4 p-4">
         {/* Sidebar */}
         <div className="w-56 shrink-0">
