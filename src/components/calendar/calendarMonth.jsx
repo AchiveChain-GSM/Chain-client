@@ -78,10 +78,8 @@ export default function CalendarMonth({
                 className={cn(
                   'flex h-[32px] w-[36px] items-center justify-center rounded-lg transition-colors',
                   monthSelected && selected.days.includes(day) && 'bg-select',
-                  monthSelected &&
-                    !selected.days.includes(day) &&
+                  !(monthSelected && selected.days.includes(day)) &&
                     'hover:bg-dayHover',
-                  !monthSelected && 'hover:bg-dayHover',
                 )}
               >
                 <span
