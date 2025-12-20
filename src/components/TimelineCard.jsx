@@ -1,33 +1,41 @@
+// src/components/TimelineCard.jsx
 export default function TimelineCard({ item }) {
   return (
-    <div className="flex h-[278px] w-[200px] flex-col overflow-hidden rounded-xl bg-[#1D1D1D]">
-      {' '}
-      {/* ✅ CHANGED */}
-      <div className="h-[160px] w-full bg-zinc-700" />
-      <div className="flex flex-1 flex-col gap-2 p-4">
-        <h4 className="text-base font-semibold text-white">{item.title}</h4>
+    <div className="flex w-full flex-col text-white">
+      {/* 1. 이미지 영역: 200x120 비율 유지 (aspect-video 활용) */}
+      <div className="relative aspect-[200/120] w-full overflow-hidden rounded-lg bg-[#2A2A2A]">
+        {item.image ? (
+          <img
+            src={item.image}
+            alt={item.title}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="h-full w-full bg-[#3F3F3F]" /> // 이미지 없을 때 대비
+        )}
+      </div>
 
-        <p className="text-sm text-zinc-400">{item.author}</p>
+      {/* 2. 텍스트 영역 (mt-12px) */}
+      <div className="mt-[12px] flex flex-col gap-[4px]">
+        <h4 className="truncate text-[16px] leading-tight font-bold">
+          {item.title}
+        </h4>
+        <p className="text-[14px] text-zinc-500">{item.author}</p>
+        <p className="mt-[4px] line-clamp-2 text-[14px] leading-snug text-zinc-400">
+          {item.description}
+        </p>
+      </div>
 
-        <p className="line-clamp-2 text-sm text-zinc-400">{item.description}</p>
-
-        <div className="mt-auto flex flex-wrap gap-2">
-          {' '}
-          {/* ✅ CHANGED: 아래로 밀리게 */}
-          {item.tags.slice(0, 3).map((tag, index) => (
-            <span
-              key={`${tag}-${index}`}
-              className="rounded-full bg-zinc-700 px-3 py-1 text-xs text-zinc-300"
-            >
-              {tag}
-            </span>
-          ))}
-          {item.tags.length > 3 && (
-            <span className="rounded-full bg-zinc-700 px-3 py-1 text-xs text-zinc-300">
-              +{item.tags.length - 3}
-            </span>
-          )}
-        </div>
+      {/* 3. 태그 영역 (mt-12px) */}
+      <div className="mt-[12px] flex flex-wrap gap-[6px]">
+        {item.tags?.map((tag, index) => (
+          <span
+            key={index}
+            className="rounded-full bg-[#2A2A2A] px-[10px] py-[4px] text-[12px] text-zinc-400"
+          >
+            {tag}
+          </span>
+        ))}
       </div>
     </div>
   );

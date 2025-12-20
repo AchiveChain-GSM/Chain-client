@@ -1,22 +1,47 @@
-import TopBar from '../components/topbar';
-import Sidebar from '../components/sidebar';
-import { SearchInput } from '../components/Search';
+import Layout from '../components/Layout';
+import BaseCard from '../components/BaseCard'; // 1. 여기서 제대로 불러오고
+import { timelineDummy } from '../data/timelineDummy';
 
-export default function Search() {
+export default function Recent() {
   return (
-    <div className="min-h-screen w-full bg-[#0F0F0F] text-white">
-      <TopBar />
+    <Layout>
+      <div className="flex h-full px-[24px] pb-[24px]">
+        <div className="flex-1 overflow-hidden rounded-xl bg-[#1D1D1D]">
+          <div className="scrollbar-hide h-full overflow-y-auto px-[32px] pt-[48px]">
+            <h2 className="text-[40px] font-bold tracking-tight text-white">
+              최근 본 자료
+            </h2>
 
-      <div className="flex h-[calc(100vh-54px)] gap-4 p-4">
-        <div className="w-56 shrink-0">
-          <Sidebar />
+            <div className="mt-[48px] flex flex-col">
+              {timelineDummy.map((day, dayIndex) => (
+                <div
+                  key={day.date}
+                  className={dayIndex !== 0 ? 'mt-[60px]' : ''}
+                >
+                  <h3 className="mb-[24px] text-[18px] font-semibold text-zinc-400">
+                    {day.date}
+                  </h3>
+
+                  {day.items.length === 0 ? (
+                    <div className="py-10 text-sm text-zinc-600">
+                      자료가 존재하지 않습니다
+                    </div>
+                  ) : (
+                    /* 2. 여기서 TimelineCard 대신 BaseCard를 사용해야 합니다! */
+                    <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
+                      {day.items.map((item) => (
+                        <BaseCard key={item.id} item={item} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="h-[80px]" />
+          </div>
         </div>
-
-        <main className="flex-1 rounded-xl bg-[#1D1D1D] p-6">
-          <h1 className="mb-6 text-xl font-semibold">자료 검색</h1>
-          <SearchInput />
-        </main>
       </div>
-    </div>
+    </Layout>
   );
 }
