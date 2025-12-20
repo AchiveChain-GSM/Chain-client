@@ -1,23 +1,28 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import TopBar from './components/topbar';
+import Login from './pages/Login';
+import Timeline from './pages/Timeline.jsx';
 
 export default function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <div
         style={{
-          backgroundColor: '#111111',
+          backgroundColor: '#191919',
           minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
+          paddingTop: 'clamp(40px, 3.125vw, 60px)',
         }}
       >
         <TopBar />
-        <Routes>
-          <Route path="/" element={null} />
-        </Routes>
+        <main style={{ flex: 1 }}>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<Timeline />} />
+          </Routes>
+        </main>
       </div>
-    </Router>
+    </BrowserRouter>
   );
 }
