@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 
 import timelineIcon from '../assets/icon/timeline.svg';
 import searchIcon from '../assets/icon/search.svg';
@@ -16,68 +15,79 @@ const sidebarItems = [
   { id: 'mydata', label: '내 자료', icon: myIcon, path: '/mydata' },
 ];
 
-function SidebarItem({ label, icon, active, onClick }) {
+function SidebarItem({ label, icon, to, collapsed, end = false }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={[
-        'flex w-full items-center gap-3',
-        'h-12 px-4 py-3',
-        'rounded-lg',
-        'text-base transition-colors font-light',
-        active ? 'bg-select text-white' : 'hover:bg-hover text-white',
-      ].join(' ')}
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        [
+          'flex w-full items-center gap-[10px]',
+          'h-[40px]',
+          collapsed ? 'px-[10px] justify-center' : 'px-[14px]',
+          'rounded-lg',
+          'text-[13px] font-light transition-colors',
+          isActive ? 'bg-select text-white' : 'hover:bg-hover text-white',
+        ].join(' ')
+      }
     >
-      <img src={icon} alt={label} className="h-4 w-4 shrink-0" />
-      <span className="leading-none">{label}</span>
-    </button>
+      <img src={icon} alt={label} className="h-[14px] w-[14px] shrink-0" />
+      {!collapsed && (
+        <span className="min-w-0 truncate leading-none">{label}</span>
+      )}
+    </NavLink>
   );
 }
 
-function AddButton({ active, onClick }) {
+function AddButton({ to, collapsed }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={[
-        'flex h-12 w-full items-center gap-3 rounded-lg px-4 py-3 text-base transition-colors text-black font-light',
-        active ? 'bg-[#FFFFFF1A]' : 'bg-white',
-      ].join(' ')}
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        [
+          'flex w-full items-center gap-[10px]',
+          'h-[40px]',
+          collapsed ? 'px-[10px] justify-center' : 'px-[14px]',
+          'rounded-lg transition-colors',
+          'text-[13px] font-light  text-black',
+          isActive ? 'bg-[#FFFFFF1A]' : 'bg-white',
+        ].join(' ')
+      }
     >
-      <img src={plusIcon} alt="자료추가" />
-      <span>자료 추가</span>
-    </button>
+      <img src={plusIcon} alt="자료추가" className="h-[14px] w-[14px] shrink-0" />
+      {!collapsed && <span className="min-w-0 truncate">자료 추가</span>}
+    </NavLink>
   );
 }
 
 export default function Sidebar() {
-  const [activeId, setActiveId] = useState('timeline');
-  const navigate = useNavigate();
+  const collapsed = false;
 
   return (
-    <aside className="bg-bg w-[234px] h-full rounded-tr-lg py-4">
-      <nav className="flex flex-col gap-3 px-6">
+    <aside
+      className={[
+        'bg-bg h-full rounded-tr-lg py-4',
+        collapsed ? 'w-[59px]' : 'w-[193px]', 
+      ].join(' ')}
+    >
+      <nav
+        className={[
+          'flex flex-col gap-[10px]',
+          collapsed ? 'px-[10px]' : 'px-[20px]',
+        ].join(' ')}
+      >
         {sidebarItems.map((item) => (
           <SidebarItem
             key={item.id}
             label={item.label}
             icon={item.icon}
-            active={activeId === item.id}
-            onClick={() => {
-              setActiveId(item.id);
-              navigate(item.path);
-            }}
+            to={item.path}
+            collapsed={collapsed}
+            end={item.path === '/'}
           />
         ))}
 
-        <AddButton
-          active={activeId === 'upload'}  
-          onClick={() => {
-            setActiveId('upload'); 
-            navigate('/upload'); 
-          }}
-        />
+        <AddButton to="/upload" collapsed={collapsed} />
       </nav>
     </aside>
   );
