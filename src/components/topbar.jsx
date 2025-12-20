@@ -8,42 +8,42 @@ const TopBar = () => {
 
   return (
     <nav
-      className="font-pretendard flex items-center justify-between px-6"
+      className="font-pretendard fixed top-0 left-0 flex w-full items-center justify-center border-b border-[#2F3233] bg-[#1D1D1D]"
       style={{
-        width: '100%',
-        maxWidth: '1920px',
-        height: '44px',
-        backgroundColor: '#1D1D1D',
-        borderBottom: '1px solid #2F3233',
-        margin: '0 auto',
+        height: '54px',
+        zIndex: 1000,
+        padding: '0 clamp(20px, 2.5vw, 48px)',
       }}
     >
-      <div className="flex items-center gap-[8px]">
-        <img
-          src={logo}
-          alt="Logo"
-          style={{
-            width: '12px',
-            height: '18px',
-            objectFit: 'contain',
-            imageRendering: '-webkit-optimize-contrast',
-          }}
-        />
-        <span
-          style={{
-            color: '#FFFFFF',
-            fontSize: '12px',
-            fontWeight: 300,
-            lineHeight: '120%',
-            letterSpacing: '-0.015em',
-            textTransform: 'uppercase',
-          }}
+      <div className="flex w-full items-center justify-between">
+        <div
+          className="flex items-center"
+          style={{ gap: '8px', height: '24px' }}
         >
-          ARCHIVE. CHAIN
-        </span>
-      </div>
+          <img
+            src={logo}
+            alt="Logo"
+            style={{
+              width: 'auto',
+              height: '100%',
+              objectFit: 'contain',
+              imageRendering: '-webkit-optimize-contrast',
+            }}
+          />
+          <span
+            style={{
+              color: '#FFFFFF',
+              fontSize: '12px',
+              fontWeight: 300,
+              textTransform: 'uppercase',
+              whiteSpace: 'nowrap',
+              letterSpacing: '-0.015em',
+            }}
+          >
+            ARCHIVE. CHAIN
+          </span>
+        </div>
 
-      <div className="flex items-center">
         <button
           onClick={() => navigate('/profile')}
           className="flex items-center justify-center transition-opacity hover:opacity-60"
@@ -52,8 +52,8 @@ const TopBar = () => {
             src={peopleShape}
             alt="Profile"
             style={{
-              width: '18px',
-              height: '18px',
+              width: '24px',
+              height: '24px',
               objectFit: 'contain',
               imageRendering: '-webkit-optimize-contrast',
             }}
