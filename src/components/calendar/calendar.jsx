@@ -74,7 +74,7 @@ export default function Calendar() {
   }, [calendarData]);
 
   return (
-    <aside className="bg-bg flex h-screen w-[390px] flex-col overflow-hidden rounded-lg">
+    <aside className="bg-bg flex h-full w-[390px] flex-col overflow-hidden rounded-t-lg">
       <CalendarHeader year={viewYear} />
 
       <div
