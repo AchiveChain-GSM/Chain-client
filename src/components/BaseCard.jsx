@@ -30,11 +30,11 @@ export default function BaseCard({ item }) {
         </p>
       </div>
 
-      {/* 태그 영역 */}
+      {/* 태그 영역: 봇 리뷰 반영하여 key값 수정 */}
       <div className="mt-[12px] flex flex-wrap gap-[6px]">
         {(item?.tags || []).map((tag, index) => (
           <span
-            key={index}
+            key={`${tag}-${index}`}
             className="rounded bg-[#2F3233] px-[8px] py-[2px] text-[12px] text-[#A1A1AA]"
           >
             {tag}
@@ -42,16 +42,19 @@ export default function BaseCard({ item }) {
         ))}
       </div>
 
-      {/* 하단 액션 바 (선 제거 버전) */}
+      {/* 하단 액션 바: 봇 리뷰 반영하여 기본값 0으로 수정 */}
       <div className="mt-[16px] flex items-center gap-[16px]">
+        {/* 좋아요 */}
         <div className="flex items-center gap-[4px]">
           <img
             src={HeartIcon}
             alt="likes"
             className="h-[16px] w-[16px] opacity-70"
           />
-          <span className="text-[13px] text-zinc-400">{item?.likes ?? 16}</span>
+          <span className="text-[13px] text-zinc-400">{item?.likes ?? 0}</span>
         </div>
+
+        {/* 북마크 */}
         <div className="flex items-center gap-[4px]">
           <img
             src={BookmarkIcon}
@@ -59,16 +62,18 @@ export default function BaseCard({ item }) {
             className="h-[16px] w-[16px] opacity-70"
           />
           <span className="text-[13px] text-zinc-400">
-            {item?.bookmarks ?? 16}
+            {item?.bookmarks ?? 0}
           </span>
         </div>
+
+        {/* 조회수 */}
         <div className="flex items-center gap-[4px]">
           <img
             src={SearchIcon}
             alt="views"
             className="h-[16px] w-[16px] opacity-70"
           />
-          <span className="text-[13px] text-zinc-400">{item?.views ?? 16}</span>
+          <span className="text-[13px] text-zinc-400">{item?.views ?? 0}</span>
         </div>
       </div>
     </div>
