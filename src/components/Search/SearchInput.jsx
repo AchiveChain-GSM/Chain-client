@@ -17,7 +17,7 @@ const SearchInput = ({ initialValue = '', onSearch }) => {
       onChange={(e) => setKeyword(e.target.value)}
       onKeyDown={handleKeyDown}
       placeholder="검색어 입력"
-      className="w-full rounded-md bg-[#444] p-3 px-5 text-white"
+      className="w-full rounded-md bg-[#191919] p-3 px-5 text-white placeholder:text-[#444444] focus:outline-none"
     />
   );
 };
