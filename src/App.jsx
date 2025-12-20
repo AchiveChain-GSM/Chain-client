@@ -1,9 +1,13 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Topbar from './components/topbar.jsx';
+import Timeline from './pages/Timeline.jsx';
+
 function App() {
   return (
     <BrowserRouter>
-      <Routes></Routes>
+      <Routes>
+        <Route path="/" element={<Timeline />} />
+        <Route path="/timeline" element={<Timeline />} />
+      </Routes>
     </BrowserRouter>
   );
 }
