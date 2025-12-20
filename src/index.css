@@ -14,3 +14,24 @@
       sans-serif;
   }
 }
+
+:root {
+  --color-bg:#1D1D1D;
+  --color-select:#2A2A2A;
+  --color-hover:#191919;
+  --color-text1:#444444;
+  --color-dayHover:#151515;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent; 
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #2B2B2B; 
+  border-radius: 8px;      
+  height: 120px;   
+  background-clip: content-box;
+}
+
