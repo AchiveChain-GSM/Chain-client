@@ -10,7 +10,7 @@ const TopBar = () => {
     <nav
       className="font-pretendard fixed top-0 left-0 flex w-full items-center justify-center border-b border-[#2F3233] bg-[#1D1D1D]"
       style={{
-        height: 'clamp(40px, 3.125vw, 60px)',
+        height: '54px',
         zIndex: 1000,
         padding: '0 clamp(20px, 2.5vw, 48px)',
       }}
@@ -18,10 +18,7 @@ const TopBar = () => {
       <div className="flex w-full items-center justify-between">
         <div
           className="flex items-center"
-          style={{
-            gap: 'clamp(4px, 0.4vw, 8px)',
-            height: 'clamp(14px, 1.25vw, 24px)',
-          }}
+          style={{ gap: '8px', height: '24px' }}
         >
           <img
             src={logo}
@@ -36,7 +33,7 @@ const TopBar = () => {
           <span
             style={{
               color: '#FFFFFF',
-              fontSize: 'clamp(8px, 0.625vw, 12px)',
+              fontSize: '12px',
               fontWeight: 300,
               textTransform: 'uppercase',
               whiteSpace: 'nowrap',
@@ -55,8 +52,8 @@ const TopBar = () => {
             src={peopleShape}
             alt="Profile"
             style={{
-              width: 'clamp(16px, 1.25vw, 24px)',
-              height: 'clamp(16px, 1.25vw, 24px)',
+              width: '24px',
+              height: '24px',
               objectFit: 'contain',
               imageRendering: '-webkit-optimize-contrast',
             }}

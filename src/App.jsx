@@ -12,7 +12,7 @@ export default function App() {
           minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
-          paddingTop: 'clamp(40px, 3.125vw, 60px)',
+          paddingTop: '54px',
         }}
       >
         <TopBar />
