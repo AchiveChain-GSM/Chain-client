@@ -1,15 +1,17 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Timeline from './pages/Timeline.jsx';
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-function App() {
+import Login from "./Login";
+import Timeline from "./pages/Timeline.jsx";
+
+export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Timeline />} />
-        <Route path="/timeline" element={<Timeline />} />
-      </Routes>
+      <div style={{ backgroundColor: "#191919", minHeight: "100vh" }}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Timeline />} />
+        </Routes>
+      </div>
     </BrowserRouter>
   );
 }
-
-export default App;
