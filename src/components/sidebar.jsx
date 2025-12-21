@@ -63,7 +63,7 @@ export default function Sidebar() {
     <aside
       className={[
         'h-full py-3',
-        'w-[234px] rounded-tr-lg',
+        'w-[200px] rounded-tr-lg',
         'bg-bg',
       ].join(' ')}
     >
