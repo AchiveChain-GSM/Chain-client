@@ -74,12 +74,12 @@ export default function Calendar() {
   }, [calendarData]);
 
   return (
-    <aside className="bg-bg flex h-full w-[390px] flex-col overflow-hidden rounded-t-lg">
+    <aside className="bg-bg flex h-full w-full flex-col overflow-hidden rounded-t-lg">
       <CalendarHeader year={viewYear} />
 
       <div
         ref={containerRef}
-        className="custom-scrollbar mr-[24px] ml-[12px] flex-1 overflow-y-auto"
+        className="custom-scrollbar mr-4 ml-3 flex-1 overflow-y-auto"
       >
         {calendarData.map((group) => (
           <div

@@ -44,10 +44,7 @@ export default function CalendarMonth({
         ? prev.days.filter((d) => d !== day)
         : [...prev.days, day];
 
-      return {
-        ...prev,
-        days: nextDays,
-      };
+      return { ...prev, days: nextDays };
     });
   };
 
@@ -55,16 +52,18 @@ export default function CalendarMonth({
     <div
       onClick={selectMonth}
       className={cn(
-        'group w-fit rounded-lg px-3 py-3 transition-colors',
+        'group w-fit rounded-lg mr-3 px-2.5 py-2.5 transition-colors',
         monthSelected ? 'bg-hover' : 'hover:bg-hover',
       )}
     >
-      <div className="mb-3 text-xl font-semibold text-white">{month}월</div>
+      <div className="mb-2 text-lg font-semibold text-white">
+        {month}월
+      </div>
 
-      <div className="grid grid-cols-[repeat(7,44px)] gap-y-[8px]">
+      <div className="grid grid-cols-[repeat(7,40px)] gap-y-[6px]">
         {cells.map((day, idx) =>
           day === null ? (
-            <div key={`empty-${idx}`} className="h-[40px] w-[44px]" />
+            <div key={`empty-${idx}`} className="h-9 w-10" />
           ) : (
             <button
               key={`day-${day}`}
@@ -72,11 +71,11 @@ export default function CalendarMonth({
                 e.stopPropagation();
                 toggleDay(day);
               }}
-              className="flex h-[40px] w-[44px] items-center justify-center"
+              className="flex h-[36px] w-[40px] items-center justify-center"
             >
               <div
                 className={cn(
-                  'flex h-[32px] w-[36px] items-center justify-center rounded-lg transition-colors',
+                  'flex h-[28px] w-[32px] items-center justify-center rounded-lg transition-colors',
                   monthSelected && selected.days.includes(day) && 'bg-select',
                   !(monthSelected && selected.days.includes(day)) &&
                     'hover:bg-dayHover',
