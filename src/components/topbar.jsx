@@ -7,57 +7,27 @@ const TopBar = () => {
   const navigate = useNavigate();
 
   return (
-    <nav
-      className="font-pretendard fixed top-0 left-0 flex w-full items-center justify-center border-b border-[#2F3233] bg-[#1D1D1D]"
-      style={{
-        height: '54px',
-        zIndex: 1000,
-        padding: '0 clamp(20px, 2.5vw, 48px)',
-      }}
-    >
+    /* h-[72px]로 디자인 수치 고정 */
+    <nav className="fixed top-0 left-0 z-[1000] flex h-[72px] w-full items-center border-b border-[#2F3233] bg-[#1D1D1D] px-[48px]">
       <div className="flex w-full items-center justify-between">
-        <div
-          className="flex items-center"
-          style={{ gap: '8px', height: '24px' }}
-        >
+        {/* 로고 영역 */}
+        <div className="flex items-center gap-[8px]">
           <img
             src={logo}
             alt="Logo"
-            style={{
-              width: 'auto',
-              height: '100%',
-              objectFit: 'contain',
-              imageRendering: '-webkit-optimize-contrast',
-            }}
+            className="h-[24px] w-auto object-contain"
           />
-          <span
-            style={{
-              color: '#FFFFFF',
-              fontSize: '12px',
-              fontWeight: 300,
-              textTransform: 'uppercase',
-              whiteSpace: 'nowrap',
-              letterSpacing: '-0.015em',
-            }}
-          >
+          <span className="text-[12px] font-light tracking-tighter text-white uppercase">
             ARCHIVE. CHAIN
           </span>
         </div>
 
+        {/* 프로필 버튼 */}
         <button
           onClick={() => navigate('/profile')}
           className="flex items-center justify-center transition-opacity hover:opacity-60"
         >
-          <img
-            src={peopleShape}
-            alt="Profile"
-            style={{
-              width: '24px',
-              height: '24px',
-              objectFit: 'contain',
-              imageRendering: '-webkit-optimize-contrast',
-            }}
-          />
+          <img src={peopleShape} alt="Profile" className="h-[24px] w-[24px]" />
         </button>
       </div>
     </nav>
