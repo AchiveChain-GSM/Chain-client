@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { NavLink } from 'react-router-dom';
 
 import timelineIcon from '../assets/icon/timeline.svg';
 import searchIcon from '../assets/icon/search.svg';
@@ -8,60 +8,71 @@ import myIcon from '../assets/icon/my.svg';
 import plusIcon from '../assets/icon/plus.svg';
 
 const sidebarItems = [
-  { id: 'timeline', label: '타임라인', icon: timelineIcon },
-  { id: 'search', label: '자료 검색', icon: searchIcon },
-  { id: 'recent', label: '최근 본 자료', icon: recentIcon },
-  { id: 'bookmark', label: '즐겨찾기', icon: bookmarkIcon },
-  { id: 'my', label: '내 자료', icon: myIcon },
+  { id: 'timeline', label: '타임라인', icon: timelineIcon, path: '/' },
+  { id: 'search', label: '자료 검색', icon: searchIcon, path: '/search' },
+  { id: 'recent', label: '최근 본 자료', icon: recentIcon, path: '/recent' },
+  { id: 'bookmark', label: '즐겨찾기', icon: bookmarkIcon, path: '/bookmark' },
+  { id: 'mydata', label: '내 자료', icon: myIcon, path: '/mydata' },
 ];
 
-function SidebarItem({ label, icon, active, onClick }) {
+function SidebarItem({ label, icon, to, end = false }) {
   return (
-    <button
-      onClick={onClick}
-      className={[
-        'flex w-full items-center gap-3',
-        'h-12 px-4 py-3',
-        'rounded-lg',
-        'text-sm transition-colors',
-        active ? 'bg-select text-white' : 'text-white hover:bg-hover',
-      ].join(' ')}
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        [
+          'flex w-full items-center gap-3',
+          'h-11 px-4',
+          'rounded-lg transition-colors',
+          'text-[15px] font-light text-white',
+          isActive ? 'bg-select' : 'hover:bg-hover',
+        ].join(' ')
+      }
     >
       <img src={icon} alt={label} className="h-4 w-4 shrink-0" />
-      <span className="leading-none">{label}</span>
-    </button>
+      <span>{label}</span>
+    </NavLink>
   );
 }
 
-function AddButton({ onClick }) {
+function AddButton({ to }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex h-12 w-full items-center gap-3 rounded-lg bg-white px-4 py-3 text-sm"
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        [
+          'flex w-full items-center gap-3',
+          'h-11 px-4',
+          'rounded-lg transition-colors',
+          'text-[15px] font-light text-black',
+          isActive ? 'bg-white/10' : 'bg-white',
+        ].join(' ')
+      }
     >
-      <img src={plusIcon} alt="자료추가" />
+      <img src={plusIcon} alt="자료추가" className="h-4 w-4 shrink-0" />
       <span>자료 추가</span>
-    </button>
+    </NavLink>
   );
 }
 
 export default function Sidebar() {
-  const [activeId, setActiveId] = useState('timeline');
-
   return (
-    <aside className="h-screen w-60 rounded-tr-lg bg-bg py-4">
-      <nav className="flex flex-col gap-3 px-6">
+    <aside
+      className={['h-full py-3', 'w-[234px] rounded-tr-lg', 'bg-bg'].join(' ')}
+    >
+      <nav className={['flex flex-col gap-2', 'px-4'].join(' ')}>
         {sidebarItems.map((item) => (
           <SidebarItem
             key={item.id}
             label={item.label}
             icon={item.icon}
-            active={activeId === item.id}
-            onClick={() => setActiveId(item.id)}
+            to={item.path}
+            end={item.path === '/'}
           />
         ))}
-        <AddButton />
+
+        <AddButton to="/upload" />
       </nav>
     </aside>
   );

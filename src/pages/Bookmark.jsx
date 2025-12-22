@@ -4,10 +4,18 @@ import SearchInput from '../components/Search/SearchInput';
 import { timelineDummy } from '../data/timelinedummy';
 import { useState } from 'react';
 
-export default function Recent() {
+export default function Bookmark() {
   const [keyword, setKeyword] = useState('');
-  const allItems = timelineDummy.flatMap((day) => day.items);
-  const searchResults = allItems.filter((item) => item.title.includes(keyword));
+
+  // 전체 즐겨찾기 데이터 (임시 필터링)
+  const allBookmarks = timelineDummy
+    .flatMap((day) => day.items)
+    .filter((_, i) => i % 2 === 0);
+
+  // 검색 결과 필터링
+  const filteredItems = allBookmarks.filter((item) =>
+    item.title.includes(keyword),
+  );
 
   return (
     <Layout>
@@ -15,11 +23,14 @@ export default function Recent() {
         <div className="flex-1 overflow-hidden rounded-xl bg-[#1D1D1D]">
           <div className="scrollbar-hide h-full overflow-y-auto px-[32px] pt-[48px]">
             <h2 className="text-[40px] font-bold tracking-tight text-white">
-              최근 본 자료
+              즐겨찾기
             </h2>
 
             <div className="mt-[36px]">
-              <SearchInput onSearch={(kw) => setKeyword(kw)} />
+              <SearchInput
+                initialValue={keyword}
+                onSearch={(kw) => setKeyword(kw)}
+              />
             </div>
 
             <div className="mt-[48px]">
@@ -29,26 +40,20 @@ export default function Recent() {
                     “{keyword}” 검색결과
                   </h3>
                   <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
-                    {searchResults.map((item) => (
+                    {filteredItems.map((item) => (
                       <BaseCard key={item.id} item={item} />
                     ))}
                   </div>
                 </>
               ) : (
-                timelineDummy.map((day) => (
-                  <div key={day.date} className="mb-[60px]">
-                    <h3 className="mb-[24px] text-[18px] font-semibold text-zinc-400">
-                      {day.date}
-                    </h3>
-                    <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
-                      {day.items.map((item) => (
-                        <BaseCard key={item.id} item={item} />
-                      ))}
-                    </div>
-                  </div>
-                ))
+                <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
+                  {allBookmarks.map((item) => (
+                    <BaseCard key={item.id} item={item} />
+                  ))}
+                </div>
               )}
             </div>
+            <div className="h-[100px]" />
           </div>
         </div>
       </div>
