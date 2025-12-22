@@ -46,9 +46,7 @@ function AddButton({ to }) {
           'h-11 px-4',
           'rounded-lg transition-colors',
           'text-[15px] font-light text-black',
-          isActive
-            ? 'bg-white/10'
-            : 'bg-white',
+          isActive ? 'bg-white/10' : 'bg-white',
         ].join(' ')
       }
     >
@@ -61,18 +59,9 @@ function AddButton({ to }) {
 export default function Sidebar() {
   return (
     <aside
-      className={[
-        'h-full py-3',
-        'w-[200px] rounded-tr-lg',
-        'bg-bg',
-      ].join(' ')}
+      className={['h-full py-3', 'w-[234px] rounded-tr-lg', 'bg-bg'].join(' ')}
     >
-      <nav
-        className={[
-          'flex flex-col gap-2',
-          'px-4',
-        ].join(' ')}
-      >
+      <nav className={['flex flex-col gap-2', 'px-4'].join(' ')}>
         {sidebarItems.map((item) => (
           <SidebarItem
             key={item.id}

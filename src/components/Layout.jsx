@@ -7,7 +7,7 @@ const Layout = ({ children }) => {
       <TopBar />
       {/* 탑바 높이에 맞춰 pt 수치를 확인하세요! */}
       <div className="flex flex-1 overflow-hidden pt-[132px]">
-        <aside className="w-[234px] shrink-0 border-r border-[#2F3233]">
+        <aside className="w-[234px] shrink-0">
           <Sidebar />
         </aside>
         <main className="flex-1 overflow-hidden">{children}</main>
