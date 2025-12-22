@@ -12,22 +12,24 @@ export const timelineDummy = [
         author: '김유찬',
         description:
           '우리 귀여운 동현꽃이에용~ 사랑하는 마음으로 보듬어주세요...',
-        tags: ['태그', '태그', '태그', '태그'], // 4개이므로 +1 표시됨
+        tags: ['태그', '태그', '태그', '태그'],
         image: img1,
         likes: 17,
         bookmarks: 17,
         views: 19,
+        isBookmarked: true, // ✅ 즐겨찾기 표시
       },
       {
         id: 2,
         title: '치즈스틱 맛도리',
         author: '배재현',
         description: '김유찬 치즈스틱 좀 맛도리네요 진짜 맛있었다',
-        tags: ['태그', '태그', '태그', '태그', '태그', '태그'], // +3 표시됨
+        tags: ['태그', '태그', '태그', '태그', '태그', '태그'],
         image: img2,
         likes: 11,
         bookmarks: 5,
         views: 40,
+        isBookmarked: false,
       },
       {
         id: 3,
@@ -39,6 +41,7 @@ export const timelineDummy = [
         likes: 26,
         bookmarks: 16,
         views: 32,
+        isBookmarked: true, // ✅ 즐겨찾기 표시
       },
       {
         id: 4,
@@ -50,6 +53,7 @@ export const timelineDummy = [
         likes: 13,
         bookmarks: 4,
         views: 39,
+        isBookmarked: false,
       },
       {
         id: 5,
@@ -61,6 +65,7 @@ export const timelineDummy = [
         likes: 16,
         bookmarks: 16,
         views: 16,
+        isBookmarked: true, // ✅ 즐겨찾기 표시
       },
     ],
   },
@@ -77,6 +82,7 @@ export const timelineDummy = [
         likes: 2,
         bookmarks: 4,
         views: 5,
+        isBookmarked: false,
       },
       {
         id: 7,
@@ -88,6 +94,7 @@ export const timelineDummy = [
         likes: 52,
         bookmarks: 10,
         views: 100,
+        isBookmarked: true, // ✅ 즐겨찾기 표시
       },
     ],
   },

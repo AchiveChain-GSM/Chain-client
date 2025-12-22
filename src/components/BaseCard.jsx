@@ -7,13 +7,13 @@ import SearchIcon from '../assets/BaseCard/cardsearch.svg';
 
 export default function BaseCard({ item }) {
   const [liked, setLiked] = useState(false);
-  const [bookmarked, setBookmarked] = useState(false);
+  // ✅ 데이터에 있는 북마크 상태를 초기값으로 설정
+  const [bookmarked, setBookmarked] = useState(item?.isBookmarked ?? false);
 
   const [likes, setLikes] = useState(item?.likes ?? 16);
   const [bookmarks, setBookmarks] = useState(item?.bookmarks ?? 16);
   const [views, setViews] = useState(item?.views ?? 16);
 
-  // 1. 태그 표시 로직: 태그 3개 + 숫자 1개 = 총 4개의 칩만 뜨도록 설정
   const maxTags = 3;
   const tagsToShow = item?.tags?.slice(0, maxTags) || [];
   const remainingCount = (item?.tags?.length || 0) - maxTags;
@@ -30,7 +30,6 @@ export default function BaseCard({ item }) {
 
   return (
     <div className="group flex w-[200px] flex-col text-white">
-      {/* 이미지 영역 (200x120) */}
       <div className="relative aspect-[200/120] w-full overflow-hidden rounded-lg bg-[#2A2A2A]">
         {item?.image ? (
           <img
@@ -43,7 +42,6 @@ export default function BaseCard({ item }) {
         )}
       </div>
 
-      {/* 텍스트 영역 */}
       <div className="mt-[12px] flex flex-col gap-[4px]">
         <h4 className="truncate text-[18px] font-semibold text-[#FFFFFF]">
           {item?.title || '제목'}
@@ -56,7 +54,6 @@ export default function BaseCard({ item }) {
         </p>
       </div>
 
-      {/* 2. 태그 영역: 배경 #2E2E2E, 글자 #FFFFFF 적용 */}
       <div className="mt-[12px] flex flex-wrap gap-[6px]">
         {tagsToShow.map((tag, index) => (
           <span
@@ -66,7 +63,6 @@ export default function BaseCard({ item }) {
             {tag}
           </span>
         ))}
-        {/* 남은 태그 개수 표시까지 포함해 화면에는 칩이 최대 4개만 뜸 */}
         {remainingCount > 0 && (
           <span className="flex h-[22px] min-w-[31px] items-center justify-center rounded-full bg-[#2E2E2E] px-[8px] text-[12px] text-[#FFFFFF]">
             +{remainingCount}
@@ -74,7 +70,6 @@ export default function BaseCard({ item }) {
         )}
       </div>
 
-      {/* 액션 바: 크기 16x16 절대 고정 */}
       <div className="mt-[16px] flex items-center gap-[12px]">
         <button
           onClick={handleLike}
@@ -97,6 +92,7 @@ export default function BaseCard({ item }) {
           onClick={handleBookmark}
           className="flex items-center gap-[4px] outline-none"
         >
+          {/* ✅ bookmarked 상태에 따라 ColorBookmarkIcon(노란색)이 뜹니다 */}
           <img
             src={bookmarked ? ColorBookmarkIcon : BookmarkIcon}
             alt="bookmarks"

@@ -3,7 +3,6 @@ import BaseCard from '../components/BaseCard';
 import SearchInput from '../components/Search/SearchInput';
 import { timelineDummy } from '../data/timelinedummy';
 import { useState } from 'react';
-// ✅ 아이콘 import 추가
 import FilterIcon from '../assets/icon/filter.svg';
 
 export default function Recent() {
@@ -46,31 +45,35 @@ export default function Recent() {
               </div>
             </div>
 
-            {/* ✅ 검색창 아래 간격 36.5px 고정 */}
             <div className="mt-[36.5px]">
-              {/* ✅ 필터 아이콘 라인 (항상 노출, 오른쪽 끝에서 58px) */}
-              <div className="mb-[36px] flex items-center justify-between pr-[58px] pl-[32px]">
-                <h3 className="text-[24px] font-semibold text-white">
-                  {keyword ? `“${keyword}” 검색결과` : ''}
-                </h3>
+              {/* ✅ 검색어(keyword)가 있을 때만 필터 아이콘 라인 노출 */}
+              {keyword && (
+                <div className="mb-[36px] flex items-center justify-between pr-[58px] pl-[32px]">
+                  <h3 className="text-[24px] font-semibold text-white">
+                    “{keyword}” 검색결과
+                  </h3>
 
-                <button className="flex items-center justify-center p-1 transition-opacity hover:opacity-70">
-                  <img
-                    src={FilterIcon}
-                    alt="filter"
-                    className="h-[28px] w-[28px]"
-                  />
-                </button>
-              </div>
+                  {/* ✅ 필터 아이콘: 28x28 사이즈 */}
+                  <button className="flex items-center justify-center p-1 transition-opacity hover:opacity-70">
+                    <img
+                      src={FilterIcon}
+                      alt="filter"
+                      className="h-[28px] w-[28px]"
+                    />
+                  </button>
+                </div>
+              )}
 
               <div className="px-[32px]">
                 {keyword ? (
+                  /* ✅ 검색 결과 그리드 */
                   <div className="grid max-w-fit grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
                     {searchResults.map((item) => (
                       <BaseCard key={item.id} item={item} />
                     ))}
                   </div>
                 ) : (
+                  /* ✅ 초기 상태: 시간대별 정렬 (필터 아이콘 없음) */
                   timelineDummy.map((day) => (
                     <div key={day.date} className="mb-[60px]">
                       <h3 className="mb-[24px] text-[18px] font-semibold text-zinc-400">
