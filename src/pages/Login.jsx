@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo/logo-vertical-symbol.svg';
 import checkIcon from '../assets/icon/check.svg';
 
 const Login = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isAutoLogin, setIsAutoLogin] = useState(false);
@@ -151,9 +153,16 @@ const Login = () => {
           className="flex justify-center gap-[12px]"
           style={{ color: '#888888', fontSize: '12px' }}
         >
-          <span className="cursor-pointer">비밀번호 찾기</span>
+          <span
+            className="cursor-pointer"
+            onClick={() => navigate('/find-password')}
+          >
+            비밀번호 찾기
+          </span>
           <span style={{ color: '#2F3233' }}>|</span>
-          <span className="cursor-pointer">회원가입</span>
+          <span className="cursor-pointer" onClick={() => navigate('/signup')}>
+            회원가입
+          </span>
         </div>
       </div>
     </div>
