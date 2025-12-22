@@ -1,4 +1,4 @@
-import { useLocation } from 'react-router-dom'; 
+import { useLocation } from 'react-router-dom';
 import Layout from '../components/Layout';
 import WriteEditor from '../components/upload/writeEditor';
 

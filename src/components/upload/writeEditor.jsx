@@ -34,7 +34,7 @@ export default function WriteEditor({ initialPost = null }) {
   return (
     <div className="bg-bg flex h-full flex-col overflow-hidden rounded-tl-lg text-white">
       <main className="custom-scrollbar m-6 overflow-y-auto">
-        {/* 1. 헤더 */}
+        {/* 1) 헤더 */}
         <EditorHeader
           title={title}
           setTitle={setTitle}
@@ -42,36 +42,34 @@ export default function WriteEditor({ initialPost = null }) {
           isSubmitting={isSubmitting}
         />
 
-        {/* 2. 툴바 */}
+        {/* 2) 툴바 */}
         <EditorToolbar editor={editor} actions={toolbarActions} />
 
-        {/* 3. 에디터 본문 */}
+        {/* 3) 본문 */}
         <div className="min-h-0 flex-1">
           <div className="rounded-lg p-4">
             <EditorContent editor={editor} />
           </div>
 
-          <div className="">
-            {/* 4. 태그 */}
-            <EditorTags
-              tags={tags}
-              tagInput={tagInput}
-              setTagInput={setTagInput}
-              handleTagKeyDown={handleTagKeyDown}
-              removeTag={removeTag}
-            />
+          {/* 4) 태그 */}
+          <EditorTags
+            tags={tags}
+            tagInput={tagInput}
+            setTagInput={setTagInput}
+            handleTagKeyDown={handleTagKeyDown}
+            removeTag={removeTag}
+          />
 
-            {/* 5. 파일 업로드 */}
-            <EditorFileUpload
-              files={files}
-              removeFile={removeFile}
-              formatFileSize={formatFileSize}
-              previews={previews}
-              getRootProps={getRootProps}
-              getInputProps={getInputProps}
-              isDragActive={isDragActive}
-            />
-          </div>
+          {/* 5) 파일 업로드 */}
+          <EditorFileUpload
+            files={files}
+            removeFile={removeFile}
+            formatFileSize={formatFileSize}
+            previews={previews}
+            getRootProps={getRootProps}
+            getInputProps={getInputProps}
+            isDragActive={isDragActive}
+          />
         </div>
       </main>
     </div>
