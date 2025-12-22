@@ -1,13 +1,14 @@
+import React, { useState } from 'react';
 import Layout from '../components/Layout';
 import BaseCard from '../components/BaseCard';
 import SearchInput from '../components/Search/SearchInput';
+import FilterModal from '../components/FilterModal'; // 필터 모달 추가
 import { timelineDummy } from '../data/timelinedummy';
-import { useState } from 'react';
-// ✅ 아이콘 import 추가
 import FilterIcon from '../assets/icon/filter.svg';
 
 export default function MyData() {
   const [keyword, setKeyword] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false); //  모달 상태 추가
 
   // 데이터 안전하게 합치기 및 검색 필터링
   const myItems = timelineDummy?.flatMap((day) => day.items || []) || [];
@@ -17,9 +18,9 @@ export default function MyData() {
 
   return (
     <Layout>
-      <div className="flex h-full px-[24px] pb-[24px]">
+      {/* relative: 모달 위치의 기준점 */}
+      <div className="relative flex h-full px-[24px] pb-[24px]">
         <div className="flex-1 overflow-hidden rounded-xl bg-[#1D1D1D]">
-          {/* ✅ 커스텀 스크롤바 적용 (#2B2B2B, 10px) */}
           <div className="custom-scrollbar h-full overflow-y-auto pt-[48px]">
             <style jsx>{`
               .custom-scrollbar::-webkit-scrollbar {
@@ -41,31 +42,32 @@ export default function MyData() {
               <h2 className="text-[40px] font-bold tracking-tight text-white">
                 내 자료
               </h2>
-
               <div className="mt-[36px]">
                 <SearchInput onSearch={(kw) => setKeyword(kw)} />
               </div>
             </div>
 
-            {/* ✅ 검색창 아래 간격 36.5px */}
             <div className="mt-[36.5px]">
-              {/* ✅ 필터 아이콘 라인 (상시 노출, 우측 끝에서 58px) */}
+              {/*  즐겨찾기와 마찬가지로 필터 버튼 상시 노출 */}
               <div className="mb-[36px] flex items-center justify-between pr-[58px] pl-[32px]">
                 <h3 className="text-[24px] font-semibold text-white">
                   {keyword ? `“${keyword}” 검색결과` : ''}
                 </h3>
 
-                <button className="flex items-center justify-center p-1 transition-opacity hover:opacity-70">
+                {/* 필터 버튼: 아이콘 24px로 축소 적용 */}
+                <button
+                  onClick={() => setIsModalOpen(!isModalOpen)} // 모달 토글
+                  className="z-10 flex items-center justify-center p-1 transition-opacity hover:opacity-70"
+                >
                   <img
                     src={FilterIcon}
                     alt="filter"
-                    className="h-[28px] w-[28px]"
+                    className="h-[24px] w-[24px]" //  24px로 조정
                   />
                 </button>
               </div>
 
               <div className="px-[32px]">
-                {/* ✅ 그리드 규격 타 페이지와 통일 (xl:grid-cols-5) */}
                 <div className="grid max-w-fit grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
                   {filtered.length === 0 ? (
                     <div className="col-span-full mt-[60px] text-center text-zinc-600">
@@ -83,6 +85,25 @@ export default function MyData() {
             <div className="h-[100px]" />
           </div>
         </div>
+
+        {/* 외부 클릭 시 닫기 레이어 및 필터 모달 */}
+        {isModalOpen && (
+          <>
+            {/* 투명 백드롭 (z-40) */}
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setIsModalOpen(false)}
+            />
+
+            {/* 필터 모달 (z-50): 위치 일관성 유지 */}
+            <div
+              className="absolute z-50 shadow-2xl"
+              style={{ top: '201px', right: '72px' }}
+            >
+              <FilterModal />
+            </div>
+          </>
+        )}
       </div>
     </Layout>
   );
