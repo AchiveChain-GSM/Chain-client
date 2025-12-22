@@ -1,12 +1,35 @@
-import React from 'react';
+import React, { useState } from 'react';
 import HeartIcon from '../assets/BaseCard/cardheart.svg';
+import ColorHeartIcon from '../assets/BaseCard/colorheart.svg';
 import BookmarkIcon from '../assets/BaseCard/cardbookmark.svg';
+import ColorBookmarkIcon from '../assets/BaseCard/colorbookmark.svg';
 import SearchIcon from '../assets/BaseCard/cardsearch.svg';
 
 export default function BaseCard({ item }) {
+  const [liked, setLiked] = useState(false);
+  // ✅ 데이터에 있는 북마크 상태를 초기값으로 설정
+  const [bookmarked, setBookmarked] = useState(item?.isBookmarked ?? false);
+
+  const [likes, setLikes] = useState(item?.likes ?? 16);
+  const [bookmarks, setBookmarks] = useState(item?.bookmarks ?? 16);
+  const [views, setViews] = useState(item?.views ?? 16);
+
+  const maxTags = 3;
+  const tagsToShow = item?.tags?.slice(0, maxTags) || [];
+  const remainingCount = (item?.tags?.length || 0) - maxTags;
+
+  const handleLike = () => {
+    setLikes((prev) => (liked ? prev - 1 : prev + 1));
+    setLiked(!liked);
+  };
+
+  const handleBookmark = () => {
+    setBookmarks((prev) => (bookmarked ? prev - 1 : prev + 1));
+    setBookmarked(!bookmarked);
+  };
+
   return (
-    <div className="group flex w-full flex-col text-white">
-      {/* 썸네일 영역 */}
+    <div className="group flex w-[200px] flex-col text-white">
       <div className="relative aspect-[200/120] w-full overflow-hidden rounded-lg bg-[#2A2A2A]">
         {item?.image ? (
           <img
@@ -19,61 +42,78 @@ export default function BaseCard({ item }) {
         )}
       </div>
 
-      {/* 텍스트 영역 */}
       <div className="mt-[12px] flex flex-col gap-[4px]">
-        <h4 className="truncate text-[16px] leading-tight font-bold">
+        <h4 className="truncate text-[18px] font-semibold text-[#FFFFFF]">
           {item?.title || '제목'}
         </h4>
-        <p className="text-[14px] text-zinc-500">{item?.author || '작성자'}</p>
-        <p className="mt-[4px] line-clamp-2 h-[40px] text-[14px] leading-snug text-zinc-400">
-          {item?.description || '설명이 없습니다.'}
+        <p className="text-[14px] font-light text-[#AAAAAA]">
+          {item?.author || '작성자'}
+        </p>
+        <p className="mt-[4px] line-clamp-2 h-[40px] text-[14px] font-light text-[#AAAAAA]">
+          {item?.description}
         </p>
       </div>
 
-      {/* 태그 영역: 봇 리뷰 반영하여 key값 수정 */}
       <div className="mt-[12px] flex flex-wrap gap-[6px]">
-        {(item?.tags || []).map((tag, index) => (
+        {tagsToShow.map((tag, index) => (
           <span
-            key={`${tag}-${index}`}
-            className="rounded bg-[#2F3233] px-[8px] py-[2px] text-[12px] text-[#A1A1AA]"
+            key={index}
+            className="flex h-[22px] min-w-[31px] items-center justify-center rounded-full bg-[#2E2E2E] px-[10px] text-[12px] text-[#FFFFFF]"
           >
             {tag}
           </span>
         ))}
+        {remainingCount > 0 && (
+          <span className="flex h-[22px] min-w-[31px] items-center justify-center rounded-full bg-[#2E2E2E] px-[8px] text-[12px] text-[#FFFFFF]">
+            +{remainingCount}
+          </span>
+        )}
       </div>
 
-      {/* 하단 액션 바: 봇 리뷰 반영하여 기본값 0으로 수정 */}
-      <div className="mt-[16px] flex items-center gap-[16px]">
-        {/* 좋아요 */}
-        <div className="flex items-center gap-[4px]">
+      <div className="mt-[16px] flex items-center gap-[12px]">
+        <button
+          onClick={handleLike}
+          className="flex items-center gap-[4px] outline-none"
+        >
           <img
-            src={HeartIcon}
+            src={liked ? ColorHeartIcon : HeartIcon}
             alt="likes"
-            className="h-[16px] w-[16px] opacity-70"
+            style={{ width: '16px', height: '16px' }}
+            className="flex-shrink-0 object-contain"
           />
-          <span className="text-[13px] text-zinc-400">{item?.likes ?? 0}</span>
-        </div>
-
-        {/* 북마크 */}
-        <div className="flex items-center gap-[4px]">
-          <img
-            src={BookmarkIcon}
-            alt="bookmarks"
-            className="h-[16px] w-[16px] opacity-70"
-          />
-          <span className="text-[13px] text-zinc-400">
-            {item?.bookmarks ?? 0}
+          <span
+            className={`text-[13px] ${liked ? 'text-[#FF4D4D]' : 'text-zinc-500'}`}
+          >
+            {likes}
           </span>
-        </div>
+        </button>
 
-        {/* 조회수 */}
-        <div className="flex items-center gap-[4px]">
+        <button
+          onClick={handleBookmark}
+          className="flex items-center gap-[4px] outline-none"
+        >
+          {/* ✅ bookmarked 상태에 따라 ColorBookmarkIcon(노란색)이 뜹니다 */}
+          <img
+            src={bookmarked ? ColorBookmarkIcon : BookmarkIcon}
+            alt="bookmarks"
+            style={{ width: '16px', height: '16px' }}
+            className="flex-shrink-0 object-contain"
+          />
+          <span
+            className={`text-[13px] ${bookmarked ? 'text-[#FFD700]' : 'text-zinc-500'}`}
+          >
+            {bookmarks}
+          </span>
+        </button>
+
+        <div className="flex items-center gap-[4px] opacity-60">
           <img
             src={SearchIcon}
             alt="views"
-            className="h-[16px] w-[16px] opacity-70"
+            style={{ width: '16px', height: '16px' }}
+            className="flex-shrink-0"
           />
-          <span className="text-[13px] text-zinc-400">{item?.views ?? 0}</span>
+          <span className="text-[13px] text-zinc-500">{views}</span>
         </div>
       </div>
     </div>
