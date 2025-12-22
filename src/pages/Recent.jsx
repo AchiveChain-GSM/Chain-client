@@ -1,8 +1,14 @@
 import Layout from '../components/Layout';
-import BaseCard from '../components/BaseCard'; // 1. 여기서 제대로 불러오고
-import { timelineDummy } from '../data/timelineDummy';
+import BaseCard from '../components/BaseCard';
+import SearchInput from '../components/Search/SearchInput';
+import { timelineDummy } from '../data/timelinedummy';
+import { useState } from 'react';
 
 export default function Recent() {
+  const [keyword, setKeyword] = useState('');
+  const allItems = timelineDummy.flatMap((day) => day.items);
+  const searchResults = allItems.filter((item) => item.title.includes(keyword));
+
   return (
     <Layout>
       <div className="flex h-full px-[24px] pb-[24px]">
@@ -12,33 +18,37 @@ export default function Recent() {
               최근 본 자료
             </h2>
 
-            <div className="mt-[48px] flex flex-col">
-              {timelineDummy.map((day, dayIndex) => (
-                <div
-                  key={day.date}
-                  className={dayIndex !== 0 ? 'mt-[60px]' : ''}
-                >
-                  <h3 className="mb-[24px] text-[18px] font-semibold text-zinc-400">
-                    {day.date}
-                  </h3>
+            <div className="mt-[36px]">
+              <SearchInput onSearch={(kw) => setKeyword(kw)} />
+            </div>
 
-                  {day.items.length === 0 ? (
-                    <div className="py-10 text-sm text-zinc-600">
-                      자료가 존재하지 않습니다
-                    </div>
-                  ) : (
-                    /* 2. 여기서 TimelineCard 대신 BaseCard를 사용해야 합니다! */
+            <div className="mt-[48px]">
+              {keyword ? (
+                <>
+                  <h3 className="mb-[36px] text-[24px] font-semibold text-white">
+                    “{keyword}” 검색결과
+                  </h3>
+                  <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
+                    {searchResults.map((item) => (
+                      <BaseCard key={item.id} item={item} />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                timelineDummy.map((day) => (
+                  <div key={day.date} className="mb-[60px]">
+                    <h3 className="mb-[24px] text-[18px] font-semibold text-zinc-400">
+                      {day.date}
+                    </h3>
                     <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
                       {day.items.map((item) => (
                         <BaseCard key={item.id} item={item} />
                       ))}
                     </div>
-                  )}
-                </div>
-              ))}
+                  </div>
+                ))
+              )}
             </div>
-
-            <div className="h-[80px]" />
           </div>
         </div>
       </div>
