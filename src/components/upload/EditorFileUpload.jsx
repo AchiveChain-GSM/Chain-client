@@ -46,7 +46,7 @@ export default function EditorFileUpload({
                 <img
                   src={previews[file.name]}
                   className="h-6 w-6 rounded object-cover"
-                  alt=""
+                  alt={file.name}
                 />
               ) : (
                 <img src={docIcon} alt="문서"></img>

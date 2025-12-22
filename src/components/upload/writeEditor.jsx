@@ -26,6 +26,7 @@ export default function WriteEditor({ initialPost = null }) {
     isDragActive,
     toolbarActions,
     handlePublish,
+    isSubmitting,
   } = useWriteEditor(initialPost);
 
   if (!editor) return null;
@@ -38,6 +39,7 @@ export default function WriteEditor({ initialPost = null }) {
           title={title}
           setTitle={setTitle}
           onPublish={handlePublish}
+          isSubmitting={isSubmitting}
         />
 
         {/* 2. 툴바 */}
