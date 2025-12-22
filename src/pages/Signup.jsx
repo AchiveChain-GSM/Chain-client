@@ -87,7 +87,11 @@ const Signup = () => {
   };
 
   const handleComplete = () => {
-    navigate('/timeline');
+    localStorage.setItem('userName', userName);
+    localStorage.setItem('generation', generation);
+    localStorage.setItem('userClass', userClass);
+    localStorage.setItem('userNumber', userNumber);
+    navigate('/');
   };
 
   const isStep4Valid =
