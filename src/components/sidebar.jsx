@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 
 import timelineIcon from '../assets/icon/timeline.svg';
 import searchIcon from '../assets/icon/search.svg';
@@ -16,68 +15,75 @@ const sidebarItems = [
   { id: 'mydata', label: '내 자료', icon: myIcon, path: '/mydata' },
 ];
 
-function SidebarItem({ label, icon, active, onClick }) {
+function SidebarItem({ label, icon, to, end = false }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={[
-        'flex w-full items-center gap-3',
-        'h-12 px-4 py-3',
-        'rounded-lg',
-        'text-base transition-colors font-light',
-        active ? 'bg-select text-white' : 'hover:bg-hover text-white',
-      ].join(' ')}
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        [
+          'flex w-full items-center gap-3',
+          'h-11 px-4',
+          'rounded-lg transition-colors',
+          'text-[15px] font-light text-white',
+          isActive ? 'bg-select' : 'hover:bg-hover',
+        ].join(' ')
+      }
     >
       <img src={icon} alt={label} className="h-4 w-4 shrink-0" />
-      <span className="leading-none">{label}</span>
-    </button>
+      <span>{label}</span>
+    </NavLink>
   );
 }
 
-function AddButton({ active, onClick }) {
+function AddButton({ to }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={[
-        'flex h-12 w-full items-center gap-3 rounded-lg px-4 py-3 text-base transition-colors text-black font-light',
-        active ? 'bg-[#FFFFFF1A]' : 'bg-white',
-      ].join(' ')}
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        [
+          'flex w-full items-center gap-3',
+          'h-11 px-4',
+          'rounded-lg transition-colors',
+          'text-[15px] font-light text-black',
+          isActive
+            ? 'bg-white/10'
+            : 'bg-white',
+        ].join(' ')
+      }
     >
-      <img src={plusIcon} alt="자료추가" />
+      <img src={plusIcon} alt="자료추가" className="h-4 w-4 shrink-0" />
       <span>자료 추가</span>
-    </button>
+    </NavLink>
   );
 }
 
 export default function Sidebar() {
-  const [activeId, setActiveId] = useState('timeline');
-  const navigate = useNavigate();
-
   return (
-    <aside className="bg-bg w-[234px] h-full rounded-tr-lg py-4">
-      <nav className="flex flex-col gap-3 px-6">
+    <aside
+      className={[
+        'h-full py-3',
+        'w-[200px] rounded-tr-lg',
+        'bg-bg',
+      ].join(' ')}
+    >
+      <nav
+        className={[
+          'flex flex-col gap-2',
+          'px-4',
+        ].join(' ')}
+      >
         {sidebarItems.map((item) => (
           <SidebarItem
             key={item.id}
             label={item.label}
             icon={item.icon}
-            active={activeId === item.id}
-            onClick={() => {
-              setActiveId(item.id);
-              navigate(item.path);
-            }}
+            to={item.path}
+            end={item.path === '/'}
           />
         ))}
 
-        <AddButton
-          active={activeId === 'upload'}  
-          onClick={() => {
-            setActiveId('upload'); 
-            navigate('/upload'); 
-          }}
-        />
+        <AddButton to="/upload" />
       </nav>
     </aside>
   );
