@@ -38,9 +38,9 @@
   pointer-events: none;
 }
 .tiptap pre {
-  background: #000000 !important; 
-  color: #d4d4d4 !important;
-  padding: 1.25rem !important;
+  background: #000000; 
+  color: #d4d4d4;
+  padding: 1.25rem;
   border-radius: 10px;
   margin: 1.5rem 0;
   font-family: 'Fira Code', 'JetBrains Mono', monospace;
@@ -48,7 +48,7 @@
   line-height: 1.6;
 }
 .tiptap p code {
-  background-color: #334155;
+  background-color: #000000;
   color: #f472b6; 
   padding: 0.3rem 0.4rem;
   margin: 0.2rem;
