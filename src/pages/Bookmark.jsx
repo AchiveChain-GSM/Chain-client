@@ -1,14 +1,16 @@
+import React, { useState } from 'react';
 import Layout from '../components/Layout';
 import BaseCard from '../components/BaseCard';
 import SearchInput from '../components/Search/SearchInput';
+import FilterModal from '../components/FilterModal'; // 필터 모달 추가
 import { timelineDummy } from '../data/timelinedummy';
-import { useState } from 'react';
 import FilterIcon from '../assets/icon/filter.svg';
 
 export default function Bookmark() {
   const [keyword, setKeyword] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false); // 모달 상태 추가
 
-  // ✅ isBookmarked: true인 데이터만 필터링
+  // isBookmarked: true인 데이터만 필터링
   const allBookmarks =
     timelineDummy
       ?.flatMap((day) => day.items || [])
@@ -20,9 +22,9 @@ export default function Bookmark() {
 
   return (
     <Layout>
-      <div className="flex h-full px-[24px] pb-[24px]">
+      {/* relative 설정: 모달 위치의 기준점 */}
+      <div className="relative flex h-full px-[24px] pb-[24px]">
         <div className="flex-1 overflow-hidden rounded-xl bg-[#1D1D1D]">
-          {/* ✅ 커스텀 스크롤바 (10px, #2B2B2B) */}
           <div className="custom-scrollbar h-full overflow-y-auto pt-[48px]">
             <style jsx>{`
               .custom-scrollbar::-webkit-scrollbar {
@@ -44,7 +46,6 @@ export default function Bookmark() {
               <h2 className="text-[40px] font-bold tracking-tight text-white">
                 즐겨찾기
               </h2>
-
               <div className="mt-[36px]">
                 <SearchInput
                   initialValue={keyword}
@@ -54,17 +55,20 @@ export default function Bookmark() {
             </div>
 
             <div className="mt-[36.5px]">
-              {/* ✅ 필터 아이콘 라인 (우측 58px 간격 유지) */}
+              {/* 즐겨찾기는 검색어 여부와 상관없이 필터 버튼 항상 노출 */}
               <div className="mb-[36px] flex items-center justify-between pr-[58px] pl-[32px]">
                 <h3 className="text-[24px] font-semibold text-white">
                   {keyword ? `“${keyword}” 검색결과` : ''}
                 </h3>
 
-                <button className="flex items-center justify-center p-1 transition-opacity hover:opacity-70">
+                <button
+                  onClick={() => setIsModalOpen(!isModalOpen)} // 모달 토글
+                  className="z-10 flex items-center justify-center p-1 transition-opacity hover:opacity-70"
+                >
                   <img
                     src={FilterIcon}
                     alt="filter"
-                    className="h-[28px] w-[28px]"
+                    className="h-[24px] w-[24px]"
                   />
                 </button>
               </div>
@@ -97,6 +101,22 @@ export default function Bookmark() {
             <div className="h-[100px]" />
           </div>
         </div>
+
+        {/* 외부 클릭 시 닫기 및 필터 모달 레이아웃 */}
+        {isModalOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setIsModalOpen(false)}
+            />
+            <div
+              className="absolute z-50 shadow-2xl"
+              style={{ top: '201px', right: '72px' }}
+            >
+              <FilterModal />
+            </div>
+          </>
+        )}
       </div>
     </Layout>
   );
