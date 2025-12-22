@@ -3,52 +3,94 @@ import BaseCard from '../components/BaseCard';
 import SearchInput from '../components/Search/SearchInput';
 import { timelineDummy } from '../data/timelinedummy';
 import { useState } from 'react';
+import FilterIcon from '../assets/icon/filter.svg';
 
 export default function Recent() {
   const [keyword, setKeyword] = useState('');
-  const allItems = timelineDummy.flatMap((day) => day.items);
-  const searchResults = allItems.filter((item) => item.title.includes(keyword));
+
+  const allItems = timelineDummy?.flatMap((day) => day.items || []) || [];
+  const searchResults = allItems.filter((item) =>
+    item.title?.toLowerCase().includes(keyword.toLowerCase()),
+  );
 
   return (
     <Layout>
       <div className="flex h-full px-[24px] pb-[24px]">
         <div className="flex-1 overflow-hidden rounded-xl bg-[#1D1D1D]">
-          <div className="scrollbar-hide h-full overflow-y-auto px-[32px] pt-[48px]">
-            <h2 className="text-[40px] font-bold tracking-tight text-white">
-              최근 본 자료
-            </h2>
+          {/* ✅ 스크롤바 스타일 통일 (#2B2B2B, 10px) */}
+          <div className="custom-scrollbar h-full overflow-y-auto pt-[48px]">
+            <style jsx>{`
+              .custom-scrollbar::-webkit-scrollbar {
+                width: 10px;
+              }
+              .custom-scrollbar::-webkit-scrollbar-track {
+                background: transparent;
+              }
+              .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: #2b2b2b;
+                border-radius: 10px;
+              }
+              .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                background: #3d3d3d;
+              }
+            `}</style>
 
-            <div className="mt-[36px]">
-              <SearchInput onSearch={(kw) => setKeyword(kw)} />
+            <div className="px-[32px]">
+              <h2 className="text-[40px] font-bold tracking-tight text-white">
+                최근 본 자료
+              </h2>
+
+              <div className="mt-[36px]">
+                <SearchInput onSearch={(kw) => setKeyword(kw)} />
+              </div>
             </div>
 
-            <div className="mt-[48px]">
-              {keyword ? (
-                <>
-                  <h3 className="mb-[36px] text-[24px] font-semibold text-white">
+            <div className="mt-[36.5px]">
+              {/* ✅ 검색어(keyword)가 있을 때만 필터 아이콘 라인 노출 */}
+              {keyword && (
+                <div className="mb-[36px] flex items-center justify-between pr-[58px] pl-[32px]">
+                  <h3 className="text-[24px] font-semibold text-white">
                     “{keyword}” 검색결과
                   </h3>
-                  <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
+
+                  {/* ✅ 필터 아이콘: 28x28 사이즈 */}
+                  <button className="flex items-center justify-center p-1 transition-opacity hover:opacity-70">
+                    <img
+                      src={FilterIcon}
+                      alt="filter"
+                      className="h-[28px] w-[28px]"
+                    />
+                  </button>
+                </div>
+              )}
+
+              <div className="px-[32px]">
+                {keyword ? (
+                  /* ✅ 검색 결과 그리드 */
+                  <div className="grid max-w-fit grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
                     {searchResults.map((item) => (
                       <BaseCard key={item.id} item={item} />
                     ))}
                   </div>
-                </>
-              ) : (
-                timelineDummy.map((day) => (
-                  <div key={day.date} className="mb-[60px]">
-                    <h3 className="mb-[24px] text-[18px] font-semibold text-zinc-400">
-                      {day.date}
-                    </h3>
-                    <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
-                      {day.items.map((item) => (
-                        <BaseCard key={item.id} item={item} />
-                      ))}
+                ) : (
+                  /* ✅ 초기 상태: 시간대별 정렬 (필터 아이콘 없음) */
+                  timelineDummy.map((day) => (
+                    <div key={day.date} className="mb-[60px]">
+                      <h3 className="mb-[24px] text-[18px] font-semibold text-zinc-400">
+                        {day.date}
+                      </h3>
+                      <div className="grid max-w-fit grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
+                        {day.items.map((item) => (
+                          <BaseCard key={item.id} item={item} />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))
-              )}
+                  ))
+                )}
+              </div>
             </div>
+
+            <div className="h-[100px]" />
           </div>
         </div>
       </div>

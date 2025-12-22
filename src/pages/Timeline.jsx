@@ -3,12 +3,11 @@ import TimelineCard from '../components/TimelineCard';
 import Calendar from '../components/calendar/calendar';
 import SearchInput from '../components/Search/SearchInput';
 import { timelineDummy } from '../data/timelinedummy';
-import { useState } from 'react'; // ✅ 상태 관리를 위해 추가
+import { useState } from 'react';
 
 export default function Timeline() {
-  const [keyword, setKeyword] = useState(''); // ✅ 검색어 상태 추가
+  const [keyword, setKeyword] = useState('');
 
-  // 전체 데이터에서 검색어에 맞는 아이템만 필터링
   const allItems = timelineDummy.flatMap((day) => day.items);
   const searchResults = allItems.filter((item) =>
     item.title.toLowerCase().includes(keyword.toLowerCase()),
@@ -24,18 +23,34 @@ export default function Timeline() {
 
         {/* 2. 타임라인 메인 보드 */}
         <div className="flex-1 overflow-hidden rounded-xl bg-[#1D1D1D]">
-          <div className="scrollbar-hide h-full overflow-y-auto px-[32px] pt-[48px]">
+          {/* ✅ custom-scrollbar 적용 */}
+          <div className="custom-scrollbar h-full overflow-y-auto px-[32px] pt-[48px]">
+            {/* ✅ 스크롤바 디자인 최종 고정 */}
+            <style jsx>{`
+              .custom-scrollbar::-webkit-scrollbar {
+                width: 10px; /* 너비 10px로 조정 */
+              }
+              .custom-scrollbar::-webkit-scrollbar-track {
+                background: transparent;
+              }
+              .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: #2b2b2b; /* 요청하신 색상 */
+                border-radius: 10px;
+              }
+              .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                background: #3d3d3d;
+              }
+            `}</style>
+
             <h2 className="text-[40px] font-bold tracking-tight text-white">
               12월
             </h2>
 
             <div className="mt-[36px]">
-              {/* ✅ 검색어 입력을 keyword 상태에 연결 */}
               <SearchInput onSearch={(kw) => setKeyword(kw)} />
             </div>
 
             <div className="mt-[36px] flex flex-col">
-              {/* ✅ 검색어가 있을 때: "검색결과" 섹션 표시 */}
               {keyword ? (
                 <div className="mt-[12px]">
                   <h3 className="mb-[36px] text-[24px] font-semibold text-white">
@@ -54,7 +69,6 @@ export default function Timeline() {
                   )}
                 </div>
               ) : (
-                /* ✅ 검색어가 없을 때: 기존 날짜별 타임라인 표시 */
                 timelineDummy.map((day, dayIndex) => (
                   <div
                     key={day.date}
