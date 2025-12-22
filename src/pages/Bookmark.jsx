@@ -7,14 +7,13 @@ import { useState } from 'react';
 export default function Bookmark() {
   const [keyword, setKeyword] = useState('');
 
-  // 전체 즐겨찾기 데이터 (임시 필터링)
-  const allBookmarks = timelineDummy
-    .flatMap((day) => day.items)
-    .filter((_, i) => i % 2 === 0);
+  const allBookmarks =
+    timelineDummy
+      ?.flatMap((day) => day.items || [])
+      .filter((_, i) => i % 2 === 0) || [];
 
-  // 검색 결과 필터링
   const filteredItems = allBookmarks.filter((item) =>
-    item.title.includes(keyword),
+    item.title?.toLowerCase().includes(keyword.toLowerCase()),
   );
 
   return (
@@ -39,14 +38,16 @@ export default function Bookmark() {
                   <h3 className="mb-[36px] text-[24px] font-semibold text-white">
                     “{keyword}” 검색결과
                   </h3>
-                  <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
+                  {/* ✅ xl:grid-cols-5로 수정하여 한 줄에 5개 노출 */}
+                  <div className="grid max-w-fit grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
                     {filteredItems.map((item) => (
                       <BaseCard key={item.id} item={item} />
                     ))}
                   </div>
                 </>
               ) : (
-                <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
+                /* ✅ 검색어 없을 때도 동일하게 xl:grid-cols-5 적용 */
+                <div className="grid max-w-fit grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
                   {allBookmarks.map((item) => (
                     <BaseCard key={item.id} item={item} />
                   ))}

@@ -6,8 +6,12 @@ import { useState } from 'react';
 
 export default function Recent() {
   const [keyword, setKeyword] = useState('');
-  const allItems = timelineDummy.flatMap((day) => day.items);
-  const searchResults = allItems.filter((item) => item.title.includes(keyword));
+
+  // 데이터 안전하게 합치기 및 검색 필터링
+  const allItems = timelineDummy?.flatMap((day) => day.items || []) || [];
+  const searchResults = allItems.filter((item) =>
+    item.title?.toLowerCase().includes(keyword.toLowerCase()),
+  );
 
   return (
     <Layout>
@@ -28,7 +32,8 @@ export default function Recent() {
                   <h3 className="mb-[36px] text-[24px] font-semibold text-white">
                     “{keyword}” 검색결과
                   </h3>
-                  <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
+                  {/* ✅ 수정: xl:grid-cols-5 적용 */}
+                  <div className="grid max-w-fit grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
                     {searchResults.map((item) => (
                       <BaseCard key={item.id} item={item} />
                     ))}
@@ -40,7 +45,8 @@ export default function Recent() {
                     <h3 className="mb-[24px] text-[18px] font-semibold text-zinc-400">
                       {day.date}
                     </h3>
-                    <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
+                    {/* ✅ 수정: 날짜별 목록도 xl:grid-cols-5 적용 */}
+                    <div className="grid max-w-fit grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
                       {day.items.map((item) => (
                         <BaseCard key={item.id} item={item} />
                       ))}

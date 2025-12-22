@@ -3,10 +3,10 @@ import TimelineCard from '../components/TimelineCard';
 import Calendar from '../components/calendar/calendar';
 import SearchInput from '../components/Search/SearchInput';
 import { timelineDummy } from '../data/timelinedummy';
-import { useState } from 'react'; // ✅ 상태 관리를 위해 추가
+import { useState } from 'react';
 
 export default function Timeline() {
-  const [keyword, setKeyword] = useState(''); // ✅ 검색어 상태 추가
+  const [keyword, setKeyword] = useState('');
 
   // 전체 데이터에서 검색어에 맞는 아이템만 필터링
   const allItems = timelineDummy.flatMap((day) => day.items);
@@ -30,12 +30,11 @@ export default function Timeline() {
             </h2>
 
             <div className="mt-[36px]">
-              {/* ✅ 검색어 입력을 keyword 상태에 연결 */}
               <SearchInput onSearch={(kw) => setKeyword(kw)} />
             </div>
 
             <div className="mt-[36px] flex flex-col">
-              {/* ✅ 검색어가 있을 때: "검색결과" 섹션 표시 */}
+              {/* ✅ 검색어가 있을 때 */}
               {keyword ? (
                 <div className="mt-[12px]">
                   <h3 className="mb-[36px] text-[24px] font-semibold text-white">
@@ -46,6 +45,7 @@ export default function Timeline() {
                       검색 결과가 없습니다.
                     </div>
                   ) : (
+                    /* 타임라인 전용 간격: gap-[36px] 적용 */
                     <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                       {searchResults.map((item) => (
                         <TimelineCard key={item.id} item={item} />
@@ -63,6 +63,7 @@ export default function Timeline() {
                     <h3 className="mb-[24px] text-[18px] font-semibold text-zinc-400">
                       {day.date}
                     </h3>
+                    {/* 타임라인 전용 간격: gap-[36px] 적용 */}
                     <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                       {day.items.map((item) => (
                         <TimelineCard key={item.id} item={item} />
