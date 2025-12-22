@@ -13,14 +13,11 @@ export default function EditorFileUpload({
 }) {
   return (
     <div className="p-4">
-      {/* 드래그 앤 드롭 영역 */}
       <div
         {...getRootProps()}
-        className={`cursor-pointer border border-dashed py-10 transition-all ${
-          isDragActive
-            ? 'border-blue-500 bg-blue-500/10'
-            : 'border-white/10'
-        } flex items-center justify-center`}
+        className={`flex cursor-pointer items-center justify-center border border-dashed py-10 transition-all ${
+          isDragActive ? 'border-blue-500 bg-blue-500/10' : 'border-white/10'
+        }`}
       >
         <input {...getInputProps()} />
         <div className="flex flex-col items-center">
@@ -34,7 +31,6 @@ export default function EditorFileUpload({
         </div>
       </div>
 
-      {/* 업로드된 파일 리스트 */}
       {files.length > 0 && (
         <div className="flex flex-col gap-3 py-4">
           {files.map((file) => (
@@ -42,22 +38,26 @@ export default function EditorFileUpload({
               key={file.id}
               className="flex items-center gap-3 rounded-full bg-[#4f4f4f] p-3 px-4"
             >
-              {file.type.startsWith('image/') && previews[file.name] ? (
+              {file.type?.startsWith('image/') && previews[file.name] ? (
                 <img
                   src={previews[file.name]}
                   className="h-6 w-6 rounded object-cover"
                   alt={file.name}
                 />
               ) : (
-                <img src={docIcon} alt="문서"></img>
+                <img src={docIcon} alt="문서" />
               )}
+
               <span className="flex-1 truncate text-sm text-white/90">
                 {file.name}
               </span>
+
               <span className="mr-2 text-xs text-white/40">
                 {formatFileSize(file.size)}
               </span>
+
               <button
+                type="button"
                 onClick={() => removeFile(file.id)}
                 className="text-white/30 hover:text-white"
               >
