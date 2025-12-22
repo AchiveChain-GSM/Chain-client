@@ -7,9 +7,9 @@ import { TextStyle } from '@tiptap/extension-text-style';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Underline } from '@tiptap/extension-underline';
 
-export default function useWriteEditor() {
-  const [title, setTitle] = useState('');
-  const [tags, setTags] = useState([]);
+export default function useWriteEditor(initialPost = null) {
+  const [title, setTitle] = useState(initialPost?.title || '');
+  const [tags, setTags] = useState(initialPost?.tags || []);
   const [tagInput, setTagInput] = useState('');
   const [files, setFiles] = useState([]);
   const [previews, setPreviews] = useState({});
@@ -22,11 +22,10 @@ export default function useWriteEditor() {
       Color,
       Placeholder.configure({ placeholder: '내용 입력' }),
     ],
-    content: '',
+    content: initialPost?.content || '',
     editorProps: {
       attributes: {
-        class:
-          'min-h-[300px] w-full text-white text-md outline-none leading-relaxed',
+        class: 'min-h-[300px] w-full text-white text-md outline-none leading-relaxed',
       },
     },
   });
@@ -71,10 +70,39 @@ export default function useWriteEditor() {
       setTagInput('');
     }
   };
+
   const removeTag = (tag) => setTags(tags.filter((t) => t !== tag));
   const removeFile = (id) => setFiles(files.filter((f) => f.id !== id));
   const formatFileSize = (bytes) =>
     bytes < 1024 ? bytes + ' B' : (bytes / 1024).toFixed(1) + ' KB';
+
+  // 게시하기 버튼 클릭 시 (나중에 API 연동)
+  const handlePublish = () => {
+    if (!title.trim()) {
+      alert('제목을 입력해주세요');
+      return;
+    }
+
+    const content = editor?.getHTML();
+    if (!content || content === '<p></p>') {
+      alert('내용을 입력해주세요');
+      return;
+    }
+
+    // 콘솔에 데이터 출력 (확인용)
+    console.log('📝 게시할 데이터:', {
+      title,
+      content: editor.getHTML(),
+      tags,
+      files: files.map(f => ({ name: f.name, size: f.size, type: f.type }))
+    });
+
+    alert('게시하기 버튼이 클릭되었습니다!\n(API 연동 후 실제 동작)');
+    
+    // TODO: 나중에 API 연동
+    // const postData = { title, content: editor.getHTML(), tags };
+    // await postsAPI.create(postData);
+  };
 
   useEffect(() => {
     return () =>
@@ -97,6 +125,7 @@ export default function useWriteEditor() {
     getRootProps,
     getInputProps,
     isDragActive,
-    toolbarActions, 
+    toolbarActions,
+    handlePublish,
   };
 }

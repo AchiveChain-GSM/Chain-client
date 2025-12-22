@@ -40,7 +40,7 @@ export default function EditorFileUpload({
           {files.map((file) => (
             <div
               key={file.id}
-              className="flex items-center gap-3 rounded-full bg-[#4f4f4f] p-3"
+              className="flex items-center gap-3 rounded-full bg-[#4f4f4f] p-3 px-4"
             >
               {file.type.startsWith('image/') && previews[file.name] ? (
                 <img

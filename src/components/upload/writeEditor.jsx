@@ -1,13 +1,13 @@
 import { EditorContent } from '@tiptap/react';
 import useWriteEditor from './useWriteEditor';
-import './EditorStyle.css'; 
+import './EditorStyle.css';
 
 import EditorHeader from './EditorHeader';
 import EditorToolbar from './EditorToolbar';
 import EditorTags from './EditorTags';
 import EditorFileUpload from './EditorFileUpload';
 
-export default function WriteEditor() {
+export default function WriteEditor({ initialPost = null }) {
   const {
     editor,
     title,
@@ -25,7 +25,8 @@ export default function WriteEditor() {
     getInputProps,
     isDragActive,
     toolbarActions,
-  } = useWriteEditor();
+    handlePublish,
+  } = useWriteEditor(initialPost);
 
   if (!editor) return null;
 
@@ -33,7 +34,11 @@ export default function WriteEditor() {
     <div className="bg-bg flex h-full flex-col overflow-hidden rounded-tl-lg text-white">
       <main className="custom-scrollbar m-6 overflow-y-auto">
         {/* 1. 헤더 */}
-        <EditorHeader title={title} setTitle={setTitle} />
+        <EditorHeader
+          title={title}
+          setTitle={setTitle}
+          onPublish={handlePublish}
+        />
 
         {/* 2. 툴바 */}
         <EditorToolbar editor={editor} actions={toolbarActions} />
