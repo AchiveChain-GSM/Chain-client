@@ -4,52 +4,63 @@ import SearchInput from '../components/Search/SearchInput';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
+// 1. 하드코딩 방지를 위한 필터 상수화
+const FILTERS = {
+  DEFAULT: 'default',
+  RECENT: 'recent',
+  LIKES: 'likes',
+  VIEWS: 'views',
+};
+
 export default function RecentPosts() {
   const [keyword, setKeyword] = useState('');
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [filter, setFilter] = useState(FILTERS.DEFAULT);
 
-  // 정렬 상태 관리 (기본값: 최근 본 자료)
-  const [filter, setFilter] = useState('default');
-
-  // 유저 ID (로그인 정보가 없다면 임시로 1 사용)
   const userId = 1;
 
   useEffect(() => {
     const fetchRecentPosts = async () => {
       try {
         setLoading(true);
+        setError(null);
 
-        // .env에 설정한 VITE_API_BASE_URL이 있다면 자동으로 붙습니다.
-        // 정렬 필터에 따른 API 엔드포인트 선택
-        let endpoint = `/api/posts/viewed/${userId}`;
-        if (filter === 'recent')
-          endpoint = `/api/posts/viewed/${userId}/recent`;
-        if (filter === 'likes') endpoint = `/api/posts/viewed/${userId}/likes`;
-        if (filter === 'views') endpoint = `/api/posts/viewed/${userId}/views`;
+        // 2. 삼항 연산자로 엔드포인트 간결화
+        const baseEndpoint = `/api/posts/viewed/${userId}`;
+        const endpoint =
+          filter !== FILTERS.DEFAULT
+            ? `${baseEndpoint}/${filter}`
+            : baseEndpoint;
 
         const response = await axios.get(endpoint);
-
-        // 중요: 명세서 구조상 response.data.content가 실제 포스트 배열입니다.
         setPosts(response.data.content || []);
-      } catch (error) {
-        console.error('최근 본 자료 로딩 에러:', error);
+      } catch (err) {
+        setError('데이터를 불러오는 중 에러가 발생했습니다.');
+        console.error('최근 본 자료 로딩 에러:', err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchRecentPosts();
-  }, [filter, userId]); // filter가 바뀔 때마다 API를 새로 호출합니다.
+  }, [filter, userId]);
 
   const searchResults = posts.filter((item) =>
     item.title.toLowerCase().includes(keyword.toLowerCase()),
   );
 
+  // 3. 필터 옵션 배열 (즐겨찾기 제외)
+  const filterOptions = [
+    { id: FILTERS.RECENT, label: '등록 시간' },
+    { id: FILTERS.VIEWS, label: '조회수' },
+    { id: FILTERS.LIKES, label: '좋아요' },
+  ];
+
   return (
     <Layout>
       <div className="flex h-full gap-[24px] px-[24px] pb-[24px]">
-        {/* 중앙 메인 영역 */}
         <div className="flex-1 overflow-hidden rounded-xl bg-[#1D1D1D]">
           <div className="custom-scrollbar h-full overflow-y-auto px-[32px] pt-[48px]">
             <h2 className="text-[40px] font-bold text-white">최근 본 자료</h2>
@@ -62,6 +73,10 @@ export default function RecentPosts() {
               {loading ? (
                 <div className="mt-[60px] text-center text-zinc-500">
                   데이터 로딩 중...
+                </div>
+              ) : error ? (
+                <div className="mt-[60px] text-center text-red-500">
+                  {error}
                 </div>
               ) : (
                 <>
@@ -78,11 +93,10 @@ export default function RecentPosts() {
                 </>
               )}
             </div>
-            <div className="h-[80px]" />
           </div>
         </div>
 
-        {/* 오른쪽 정렬 사이드바 (캡처 이미지 디자인 반영) */}
+        {/* 오른쪽 정렬 사이드바 (즐겨찾기 버튼 제거) */}
         <div className="w-[200px] shrink-0 pt-[48px]">
           <div className="flex flex-col gap-6 rounded-xl bg-[#1D1D1D] p-[24px]">
             <div>
@@ -90,39 +104,19 @@ export default function RecentPosts() {
                 <span className="text-[18px]">⋮≡</span> 정렬 기준
               </p>
               <div className="flex flex-col gap-3 text-[15px]">
-                <button
-                  onClick={() => setFilter('recent')}
-                  className={
-                    filter === 'recent'
-                      ? 'font-bold text-white'
-                      : 'text-zinc-500 hover:text-zinc-300'
-                  }
-                >
-                  등록 시간
-                </button>
-                <button
-                  onClick={() => setFilter('views')}
-                  className={
-                    filter === 'views'
-                      ? 'font-bold text-white'
-                      : 'text-zinc-500 hover:text-zinc-300'
-                  }
-                >
-                  조회수
-                </button>
-                <button
-                  onClick={() => setFilter('likes')}
-                  className={
-                    filter === 'likes'
-                      ? 'font-bold text-white'
-                      : 'text-zinc-500 hover:text-zinc-300'
-                  }
-                >
-                  좋아요
-                </button>
-                <button className="cursor-not-allowed text-zinc-500">
-                  즐겨찾기
-                </button>
+                {filterOptions.map((option) => (
+                  <button
+                    key={option.id}
+                    onClick={() => setFilter(option.id)}
+                    className={
+                      filter === option.id
+                        ? 'text-left font-bold text-white'
+                        : 'text-left text-zinc-500 hover:text-zinc-300'
+                    }
+                  >
+                    {option.label}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
