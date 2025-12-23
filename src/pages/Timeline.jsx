@@ -6,19 +6,25 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-// ✅ 임시 데이터 정의
+// ✅ id와 postId를 둘 다 넣어 데이터 충돌을 방지합니다.
 const DUMMY_POSTS = [
   {
+    id: 't-1',
     postId: 't-1',
     title: '오늘의 리액트 공부 기록',
     author: '민선',
+    description:
+      '리액트 컴포넌트 구조와 라우팅을 공부했습니다. 가변형 카드 디자인을 적용해보니 화면이 훨씬 꽉 차 보이네요.',
     tags: ['React', 'TIL'],
     firstImageUrl: 'https://picsum.photos/400/240?random=11',
   },
   {
+    id: 't-2',
     postId: 't-2',
     title: '디자인 원복 및 기능 수정',
     author: '민선',
+    description:
+      '피그마 시안에 맞춰 간격을 158px로 조정하고, 카드 너비를 가변형으로 수정하여 맥북 해상도에 최적화했습니다.',
     tags: ['UI', 'Fixed'],
     firstImageUrl: 'https://picsum.photos/400/240?random=12',
   },
@@ -48,18 +54,13 @@ export default function Timeline() {
         const fetchedData = Array.isArray(response.data)
           ? response.data
           : response.data.content || [];
-
-        // ✅ 서버에 실제 데이터가 있으면 그것을 쓰고, 없으면 임시 데이터를 넣습니다.
         setPosts(fetchedData.length > 0 ? fetchedData : DUMMY_POSTS);
       } catch (error) {
-        console.error('타임라인 로딩 에러:', error);
-        // ✅ 에러가 났을 때(예: 401 에러)도 화면 확인을 위해 임시 데이터를 보여줍니다.
         setPosts(DUMMY_POSTS);
       } finally {
         setLoading(false);
       }
     };
-
     fetchTimeline();
   }, [currentDate]);
 
@@ -70,30 +71,12 @@ export default function Timeline() {
   return (
     <Layout>
       <div className="flex h-full gap-[24px] px-[24px] pb-[24px]">
-        {/* 캘린더 영역 (민선님 코드 그대로 유지) */}
         <div className="scrollbar-hide w-[390px] shrink-0 overflow-y-auto">
           <Calendar onDateChange={(date) => setCurrentDate(date)} />
         </div>
 
-        {/* 콘텐츠 영역 (민선님 코드 그대로 유지) */}
         <div className="flex-1 overflow-hidden rounded-xl bg-[#1D1D1D]">
           <div className="custom-scrollbar h-full overflow-y-auto px-[32px] pt-[48px]">
-            <style jsx>{`
-              .custom-scrollbar::-webkit-scrollbar {
-                width: 10px;
-              }
-              .custom-scrollbar::-webkit-scrollbar-track {
-                background: transparent;
-              }
-              .custom-scrollbar::-webkit-scrollbar-thumb {
-                background: #2b2b2b;
-                border-radius: 10px;
-              }
-              .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                background: #3d3d3d;
-              }
-            `}</style>
-
             <h2 className="text-[40px] font-bold tracking-tight text-white">
               {currentDate.getMonth() + 1}월
             </h2>
@@ -115,26 +98,21 @@ export default function Timeline() {
                     </h3>
                   )}
 
-                  <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                  {/* ✅ xl:4개, 2xl:5개로 설정하여 카드 크기를 작고 이쁘게 유지 */}
+                  <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
                     {(keyword ? searchResults : posts).map((item) => (
                       <TimelineCard
-                        key={item.postId}
+                        key={item.id || item.postId}
                         item={item}
+                        // ✅ App.jsx의 /posts/:id 와 정확히 일치시킴
                         onClick={() =>
-                          navigate(`/post/${item.postId}`, {
+                          navigate(`/posts/${item.id || item.postId}`, {
                             state: { post: item },
                           })
                         }
                       />
                     ))}
                   </div>
-
-                  {!loading &&
-                    (keyword ? searchResults : posts).length === 0 && (
-                      <div className="mt-[60px] text-center text-zinc-600">
-                        자료가 존재하지 않습니다.
-                      </div>
-                    )}
                 </div>
               )}
             </div>

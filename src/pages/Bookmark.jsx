@@ -24,10 +24,10 @@ export default function Bookmark() {
 
   useEffect(() => {
     const fetchBookmarks = async () => {
-      // ✅ 1. 코드 리뷰 반영: 사용자 식별자(userId) 가져오기
+      // ✅ 사용자 식별자(userId) 가져오기
       const userId = localStorage.getItem('userId');
 
-      // ✅ 2. 코드 리뷰 반영: 로그인이 안 된 경우 처리
+      // ✅ 로그인이 안 된 경우 처리
       if (!userId) {
         console.error('즐겨찾기 목록을 불러오려면 로그인이 필요합니다.');
         setPosts([]);
@@ -39,7 +39,7 @@ export default function Bookmark() {
         setLoading(true);
         const filterPath = BOOKMARK_FILTERS[filter] || '';
 
-        // ✅ 3. 코드 리뷰 반영: API 경로에 userId 포함
+        // ✅ API 경로에 userId 포함
         const response = await axios.get(
           `/api/posts/bookmarked/${userId}/${filterPath}`,
         );
@@ -119,7 +119,8 @@ export default function Bookmark() {
                     데이터를 불러오는 중...
                   </div>
                 ) : (
-                  <div className="grid max-w-fit grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
+                  /* ✅ 그리드 설정을 다른 페이지와 통일하여 카드 크기를 예쁘게 맞춤 */
+                  <div className="grid grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
                     {filteredItems.length === 0 ? (
                       <div className="col-span-full mt-[60px] text-center text-zinc-600">
                         {keyword
@@ -131,8 +132,9 @@ export default function Bookmark() {
                         <TimelineCard
                           key={item.postId}
                           item={item}
+                          // ✅ /post/ -> /posts/ (복수형) 수정 및 데이터(state) 전달 추가
                           onClick={() =>
-                            navigate(`/post/${item.postId}`, {
+                            navigate(`/posts/${item.postId}`, {
                               state: { post: item },
                             })
                           }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 
 import '../upload/EditorStyle.css';
 
@@ -16,9 +16,9 @@ import {
   deletePost,
 } from '../../api/posts';
 
-// ⚠️ 만약 api/reactions 파일이 없다면 이 부분은 ../../api/posts 로 수정하세요.
 import { togglePostLike, togglePostBookmark } from '../../api/reactions';
 
+// 데이터 형식을 일정하게 맞춰주는 도우미 함수들
 function normalizeComment(res, postId) {
   return {
     commentId: res.commentId ?? res.id,
@@ -35,13 +35,13 @@ function normalizeComment(res, postId) {
 function normalizePost(raw, routeId) {
   return {
     postId: raw?.id ?? raw?.postId ?? routeId,
-    title: raw?.title ?? '',
-    content: raw?.content ?? '',
+    title: raw?.title ?? '제목 없음',
+    content: raw?.content ?? raw?.description ?? '내용이 없습니다.',
     tags: raw?.tags ?? [],
     author:
       typeof raw?.author === 'string'
         ? { userId: null, name: raw.author }
-        : (raw?.author ?? { userId: null, name: '' }),
+        : (raw?.author ?? { userId: null, name: '작성자 미상' }),
     likeCount: raw?.likes ?? raw?.likeCount ?? 0,
     bookmarkCount: raw?.bookmarks ?? raw?.bookmarkCount ?? 0,
     viewCount: raw?.views ?? raw?.viewCount ?? 0,
@@ -53,16 +53,22 @@ function normalizePost(raw, routeId) {
   };
 }
 
-export default function PostDetailView({ initialPost }) {
+export default function PostDetailView() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // TODO: 실제 로그인 유저로 교체 (Context 등 활용 권장)
   const currentUser = { userId: 'me-001', name: '김유찬' };
 
-  const [postData, setPostData] = useState(null);
-  const [error, setError] = useState(null); // ✅ 에러 상태 추가
+  // 1. 초기 데이터 설정: 카드를 통해 들어왔다면 그 데이터를 바로 사용하여 검은 화면 방지
+  const [postData, setPostData] = useState(() => {
+    if (location.state?.post) {
+      return normalizePost(location.state.post, id);
+    }
+    return null;
+  });
 
+  const [error, setError] = useState(null);
   const [commentInput, setCommentInput] = useState('');
   const [commentPending, setCommentPending] = useState(false);
   const [likePending, setLikePending] = useState(false);
@@ -73,30 +79,21 @@ export default function PostDetailView({ initialPost }) {
 
   const isOwner = useMemo(() => {
     if (!postData) return false;
-
     const authorId = postData.author?.userId;
     const myId = currentUser?.userId;
-
     if (authorId && myId) return authorId === myId;
-
-    const authorName = postData.author?.name ?? '';
-    const myName = currentUser?.name ?? '';
-    return authorName && myName ? authorName === myName : false;
+    return (postData.author?.name || '') === (currentUser?.name || '');
   }, [postData, currentUser]);
 
-  // ✅ 파일 다운로드 핸들러 개선 (a 태그 사용)
   const handleDownload = useCallback((file) => {
     const url =
       typeof file === 'string'
         ? file
-        : (file?.url ?? file?.fileUrl ?? file?.downloadUrl ?? file?.path);
-
+        : (file?.url ?? file?.fileUrl ?? file?.path);
     if (!url) {
       alert('다운로드 URL이 없습니다.');
       return;
     }
-
-    // 가상 링크 생성하여 다운로드 시도
     const link = document.createElement('a');
     link.href = url;
     link.target = '_blank';
@@ -106,15 +103,9 @@ export default function PostDetailView({ initialPost }) {
     document.body.removeChild(link);
   }, []);
 
-  // ✅ 게시글 조회
+  // 2. 서버에서 최신 데이터 가져오기 (배경에서 실행)
   useEffect(() => {
     let alive = true;
-    setError(null); // ID 변경 시 에러 초기화
-
-    // 초기 데이터가 있으면 먼저 설정 (UX 최적화)
-    if (initialPost && String(initialPost.id) === String(id)) {
-      setPostData(normalizePost(initialPost, id));
-    }
 
     getPost(id)
       .then((res) => {
@@ -127,45 +118,41 @@ export default function PostDetailView({ initialPost }) {
       })
       .catch((err) => {
         if (!alive) return;
-        console.error(err);
-        setError('게시글을 불러올 수 없습니다.'); // 에러 상태 업데이트
+        console.error('서버 데이터 로딩 실패:', err);
+        // ✅ 핵심 수정: postData(임시 데이터)가 이미 화면에 떠있다면 에러 메시지를 띄우지 않음
+        if (!postData) {
+          setError('게시글을 불러올 수 없습니다.');
+        }
       });
 
     return () => {
       alive = false;
     };
-  }, [id, initialPost]);
+  }, [id]);
 
-  // ✅ 댓글 조회
   const fetchComments = useCallback(async () => {
     try {
       const res = await getPostComments(id);
       const list = res?.data ?? res ?? [];
-
-      setPostData((prev) => {
-        // 게시글 데이터가 없으면 댓글을 넣을 수 없으므로 방어
-        if (!prev) return prev;
-        return {
-          ...prev,
-          comments: list.map((c) => normalizeComment(c, Number(id))),
-        };
-      });
+      setPostData((prev) =>
+        prev
+          ? {
+              ...prev,
+              comments: list.map((c) => normalizeComment(c, Number(id))),
+            }
+          : null,
+      );
     } catch (e) {
       console.error('댓글 로딩 실패', e);
     }
   }, [id]);
 
-  // 게시글 로딩 완료 시 댓글 가져오기
   useEffect(() => {
-    if (postData?.postId) {
-      fetchComments();
-    }
+    if (postData?.postId) fetchComments();
   }, [fetchComments, postData?.postId]);
 
-  // 댓글 작성
   const handleSubmitComment = async () => {
     if (commentPending || !commentInput.trim()) return;
-
     setCommentPending(true);
     try {
       await createPostComment(id, commentInput);
@@ -178,93 +165,76 @@ export default function PostDetailView({ initialPost }) {
     }
   };
 
-  // 좋아요
   const handleToggleLike = async () => {
     if (likePending) return;
-
     setLikePending(true);
     try {
       await togglePostLike(id);
-      setPostData((p) => {
-        if (!p) return p;
-        const nextLiked = !p.isLiked;
-        return {
-          ...p,
-          isLiked: nextLiked,
-          likeCount: nextLiked ? p.likeCount + 1 : Math.max(0, p.likeCount - 1),
-        };
-      });
-    } catch (e) {
-      console.error(e);
-      alert('좋아요 처리 실패');
+      setPostData((p) =>
+        p
+          ? {
+              ...p,
+              isLiked: !p.isLiked,
+              likeCount: !p.isLiked
+                ? p.likeCount + 1
+                : Math.max(0, p.likeCount - 1),
+            }
+          : null,
+      );
+    } catch {
+      alert('좋아요 실패');
     } finally {
       setLikePending(false);
     }
   };
 
-  // 북마크
   const handleToggleBookmark = async () => {
     if (bookmarkPending) return;
-
     setBookmarkPending(true);
     try {
       await togglePostBookmark(id);
-      setPostData((p) => {
-        if (!p) return p;
-        const nextBookmarked = !p.isBookmarked;
-        return {
-          ...p,
-          isBookmarked: nextBookmarked,
-          bookmarkCount: nextBookmarked
-            ? p.bookmarkCount + 1
-            : Math.max(0, p.bookmarkCount - 1),
-        };
-      });
-    } catch (e) {
-      console.error(e);
-      alert('북마크 처리 실패');
+      setPostData((p) =>
+        p
+          ? {
+              ...p,
+              isBookmarked: !p.isBookmarked,
+              bookmarkCount: !p.isBookmarked
+                ? p.bookmarkCount + 1
+                : Math.max(0, p.bookmarkCount - 1),
+            }
+          : null,
+      );
+    } catch {
+      alert('북마크 실패');
     } finally {
       setBookmarkPending(false);
     }
   };
 
-  // 수정
   const handleEdit = () => {
     setIsMenuOpen(false);
     navigate(`/posts/${id}/edit`);
   };
-
-  // 삭제
   const handleDelete = async () => {
     setIsMenuOpen(false);
-
-    const ok = window.confirm('정말 삭제하시겠습니까?');
-    if (!ok) return;
-
+    if (!window.confirm('정말 삭제하시겠습니까?')) return;
     try {
       await deletePost(id);
       alert('삭제되었습니다.');
       navigate('/');
-    } catch (e) {
-      console.error(e);
-      alert('삭제에 실패했습니다.');
+    } catch {
+      alert('삭제 실패');
     }
   };
 
-  // 신고 열기
-  const handleOpenReport = () => {
-    setIsMenuOpen(false);
-    setIsReportModalOpen(true);
-  };
-
-  // ⚠️ 에러 발생 시 UI
-  if (error) {
+  // ⚠️ 진짜 데이터가 아무것도 없을 때만 에러 노출
+  if (error && !postData) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4 text-zinc-400">
+      <div className="flex h-screen flex-col items-center justify-center bg-[#121212] text-zinc-400">
         <p>{error}</p>
         <button
           onClick={() => navigate(-1)}
-          className="rounded bg-zinc-700 px-4 py-2 text-white hover:bg-zinc-600"
+          className="mt-4 rounded bg-zinc-800 px-4 py-2 text-white"
         >
           뒤로 가기
         </button>
@@ -272,48 +242,58 @@ export default function PostDetailView({ initialPost }) {
     );
   }
 
-  // 로딩 중 UI
+  // 로딩 중일 때도 검은 화면 방지 (배경색 명시)
   if (!postData) {
     return (
-      <div className="flex h-full items-center justify-center text-zinc-400">
-        게시글을 불러오는 중입니다...
+      <div className="flex h-screen items-center justify-center bg-[#121212] text-zinc-400">
+        불러오는 중...
       </div>
     );
   }
 
   return (
-    <div className="bg-bg flex h-full flex-col p-4 text-white">
-      <main className="m-6 overflow-y-auto pr-6">
-        <PostHeader
-          postData={postData}
-          isOwner={isOwner}
-          isMenuOpen={isMenuOpen}
-          setIsMenuOpen={setIsMenuOpen}
-          onBack={() => navigate(-1)}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onReport={handleOpenReport}
-          currentUser={currentUser}
-        />
+    <div className="flex h-screen flex-col bg-[#121212] text-white">
+      <main className="custom-scrollbar flex-1 overflow-y-auto p-6 md:p-12">
+        <div className="mx-auto max-w-[800px]">
+          <PostHeader
+            postData={postData}
+            isOwner={isOwner}
+            isMenuOpen={isMenuOpen}
+            setIsMenuOpen={setIsMenuOpen}
+            onBack={() => navigate(-1)}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onReport={() => setIsReportModalOpen(true)}
+            currentUser={currentUser}
+          />
 
-        <PostBody
-          postData={postData}
-          onToggleLike={handleToggleLike}
-          onToggleBookmark={handleToggleBookmark}
-          likePending={likePending}
-          bookmarkPending={bookmarkPending}
-        />
+          <div className="mt-8">
+            <PostBody
+              postData={postData}
+              onToggleLike={handleToggleLike}
+              onToggleBookmark={handleToggleBookmark}
+              likePending={likePending}
+              bookmarkPending={bookmarkPending}
+            />
+          </div>
 
-        <PostFiles files={postData.files} onDownload={handleDownload} />
+          {postData.files?.length > 0 && (
+            <div className="mt-8">
+              <PostFiles files={postData.files} onDownload={handleDownload} />
+            </div>
+          )}
 
-        <PostComments
-          comments={postData.comments}
-          commentInput={commentInput}
-          setCommentInput={setCommentInput}
-          onSubmit={handleSubmitComment}
-          currentUser={currentUser}
-          commentPending={commentPending}
-        />
+          <div className="mt-12 border-t border-zinc-800 pt-8">
+            <PostComments
+              comments={postData.comments}
+              commentInput={commentInput}
+              setCommentInput={setCommentInput}
+              onSubmit={handleSubmitComment}
+              currentUser={currentUser}
+              commentPending={commentPending}
+            />
+          </div>
+        </div>
       </main>
 
       {isReportModalOpen && (

@@ -7,12 +7,14 @@ import FilterModal from '../components/FilterModal';
 import FilterIcon from '../assets/icon/filter.svg';
 import axios from 'axios';
 
-//  임시 데이터 정의
+// ✅ 상세 페이지 연결을 위해 본문(description) 데이터를 보강한 임시 데이터
 const DUMMY_POSTS = [
   {
     postId: '1',
     title: 'React 프로젝트 구조 잡는 법',
     author: '김철수',
+    description:
+      '효율적인 리액트 프로젝트 아키텍처 설계를 위한 폴더 구조와 컴포넌트 분리 전략을 알아봅니다.',
     tags: ['React', 'Architecture'],
     firstImageUrl: 'https://picsum.photos/400/300?random=1',
   },
@@ -20,6 +22,8 @@ const DUMMY_POSTS = [
     postId: '2',
     title: 'Tailwind CSS 활용 가이드',
     author: '이영희',
+    description:
+      'Tailwind CSS를 사용하여 유틸리티 퍼스트 방식으로 빠르게 스타일링하는 팁을 공유합니다.',
     tags: ['CSS', 'Design'],
     firstImageUrl: 'https://picsum.photos/400/300?random=2',
   },
@@ -27,6 +31,8 @@ const DUMMY_POSTS = [
     postId: '3',
     title: 'Axios로 API 연동하기',
     author: '박민준',
+    description:
+      'Axios 라이브러리를 활용하여 REST API와 통신하고 데이터를 처리하는 표준적인 방법을 공부합니다.',
     tags: ['API', 'Axios'],
     firstImageUrl: 'https://picsum.photos/400/300?random=3',
   },
@@ -34,6 +40,8 @@ const DUMMY_POSTS = [
     postId: '4',
     title: '자바스크립트 최신 문법 정리',
     author: '정다은',
+    description:
+      'ES6 이후 도입된 자바스크립트의 최신 문법들을 실제 코드 예제와 함께 정리했습니다.',
     tags: ['JS', 'ES6'],
     firstImageUrl: 'https://picsum.photos/400/300?random=4',
   },
@@ -41,6 +49,8 @@ const DUMMY_POSTS = [
     postId: '5',
     title: 'Git 브랜치 전략 (GitFlow)',
     author: '최요한',
+    description:
+      '협업 효율을 높여주는 GitFlow 전략의 핵심 개념과 실제 적용 사례를 소개합니다.',
     tags: ['Git', 'Workflow'],
     firstImageUrl: 'https://picsum.photos/400/300?random=5',
   },
@@ -50,8 +60,6 @@ export default function Search() {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  //  초기값을 임시 데이터로 설정
   const [posts, setPosts] = useState(DUMMY_POSTS);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState('recent');
@@ -65,13 +73,11 @@ export default function Search() {
           ? response.data
           : response.data.content || [];
 
-        // 서버에 데이터가 있을 때만 덮어씌우기 (없으면 임시 데이터 유지)
         if (fetchedData.length > 0) {
           setPosts(fetchedData);
         }
       } catch (err) {
         console.error('검색 로딩 실패:', err);
-        // 에러 시에도 임시 데이터를 보여주고 싶다면 여기서 setPosts([])를 하지 않습니다.
       } finally {
         setLoading(false);
       }
@@ -79,7 +85,6 @@ export default function Search() {
     fetchPosts();
   }, [filter]);
 
-  // 키워드 검색 필터링 로직
   const displayPosts = posts.filter((item) =>
     item.title?.toLowerCase().includes(keyword.toLowerCase()),
   );
@@ -103,7 +108,6 @@ export default function Search() {
                   onClick={() => setIsModalOpen(true)}
                   className="p-1 transition-opacity hover:opacity-70"
                 >
-                  {/* 필터 아이콘 크기 수정 완료 */}
                   <img
                     src={FilterIcon}
                     alt="filter"
@@ -126,8 +130,9 @@ export default function Search() {
                     <BaseCard
                       key={item.postId}
                       item={item}
+                      // ✅ /post/ -> /posts/ 로 경로 수정 완료 (App.jsx 라우트와 일치)
                       onClick={() =>
-                        navigate(`/post/${item.postId}`, {
+                        navigate(`/posts/${item.postId}`, {
                           state: { post: item },
                         })
                       }
