@@ -11,14 +11,14 @@ const FILTERS = {
   VIEWS: 'views',
 };
 
-export default function RecentPosts() {
+export default function MydataPosts() {
   const [keyword, setKeyword] = useState('');
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState(FILTERS.DEFAULT);
 
-  // ✅ 로컬 스토리지에서 실제 유저 ID 가져오기
+  // ✅ 로컬 스토리지에서 유저 ID 동적 획득 (봇 피드백 반영)
   const userId = localStorage.getItem('userId');
 
   useEffect(() => {
@@ -28,34 +28,31 @@ export default function RecentPosts() {
       return;
     }
 
-    const fetchRecentPosts = async () => {
+    const fetchMydata = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // ✅ 최근 본 자료 엔드포인트 (/api/posts/viewed)
-        const baseEndpoint = `/api/posts/viewed/${userId}`;
+        // ✅ 내 자료 전용 엔드포인트 (/api/posts/written)
+        const baseEndpoint = `/api/posts/written/${userId}`;
         const endpoint =
           filter !== FILTERS.DEFAULT
             ? `${baseEndpoint}/${filter}`
             : baseEndpoint;
 
         const response = await axios.get(endpoint);
-
-        // ✅ API 명세서의 "content" 배열을 저장
         setPosts(response.data.content || []);
       } catch (err) {
-        setError('최근 본 자료를 불러오는 중 에러가 발생했습니다.');
-        console.error('로딩 에러:', err);
+        setError('자료를 불러오는 중 에러가 발생했습니다.');
+        console.error('내 자료 로딩 에러:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchRecentPosts();
+    fetchMydata();
   }, [filter, userId]);
 
-  // 키워드 검색 필터링
   const searchResults = posts.filter((item) =>
     item.title.toLowerCase().includes(keyword.toLowerCase()),
   );
@@ -71,12 +68,10 @@ export default function RecentPosts() {
       <div className="flex h-full gap-[24px] px-[24px] pb-[24px]">
         <div className="flex-1 overflow-hidden rounded-xl bg-[#1D1D1D]">
           <div className="custom-scrollbar h-full overflow-y-auto px-[32px] pt-[48px]">
-            <h2 className="text-[40px] font-bold text-white">최근 본 자료</h2>
-
+            <h2 className="text-[40px] font-bold text-white">내 자료</h2>
             <div className="mt-[36px]">
               <SearchInput onSearch={(kw) => setKeyword(kw)} />
             </div>
-
             <div className="mt-[36px] flex flex-col">
               {loading ? (
                 <div className="mt-[60px] text-center text-zinc-500">
@@ -97,7 +92,6 @@ export default function RecentPosts() {
           </div>
         </div>
 
-        {/* 오른쪽 사이드바 정렬 버튼 */}
         <div className="w-[200px] shrink-0 pt-[48px]">
           <div className="flex flex-col gap-6 rounded-xl bg-[#1D1D1D] p-[24px]">
             <div>

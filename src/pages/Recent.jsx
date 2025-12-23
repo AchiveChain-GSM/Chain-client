@@ -1,19 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // ✅ 1. 이동 도구 추가
 import Layout from '../components/Layout';
-import BaseCard from '../components/BaseCard';
+import TimelineCard from '../components/TimelineCard';
 import SearchInput from '../components/Search/SearchInput';
 import FilterModal from '../components/FilterModal';
-import { timelineDummy } from '../data/timelinedummy';
 import FilterIcon from '../assets/icon/filter.svg';
+import axios from 'axios';
 
 export default function Recent() {
+  const navigate = useNavigate(); // ✅ 2. 이동 함수 선언
   const [keyword, setKeyword] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('recent');
 
-  const allItems = timelineDummy?.flatMap((day) => day.items || []) || [];
-  const searchResults = allItems.filter((item) =>
+  // 1. 서버에서 데이터 가져오기 (필터가 바뀔 때마다 다시 호출)
+  useEffect(() => {
+    const fetchRecentData = async () => {
+      try {
+        setLoading(true);
+        const userId = localStorage.getItem('userId');
+
+        // 정렬 기준(filter)을 주소 뒤에 붙여서 호출합니다.
+        const response = await axios.get(
+          `/api/posts/viewed/${userId}/${filter}`,
+        );
+
+        const fetchedData = Array.isArray(response.data)
+          ? response.data
+          : response.data.content || [];
+
+        setPosts(fetchedData);
+      } catch (err) {
+        console.error('최근 본 자료 호출 실패:', err);
+        setPosts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRecentData();
+  }, [filter]);
+
+  // 2. 검색 필터링 로직
+  const searchResults = posts.filter((item) =>
     item.title?.toLowerCase().includes(keyword.toLowerCase()),
   );
+
+  const displayPosts = keyword ? searchResults : posts;
 
   return (
     <Layout>
@@ -46,59 +80,45 @@ export default function Recent() {
             </div>
 
             <div className="mt-[36.5px]">
-              {/* ✅ 검색어가 있을 때만 결과 타이틀과 필터 아이콘 노출 */}
-              {keyword && (
-                <div className="mb-[36px] flex items-center justify-between pr-[58px] pl-[32px]">
-                  <h3 className="text-[24px] font-semibold text-white">
-                    “{keyword}” 검색결과
-                  </h3>
-                  <button
-                    onClick={() => setIsModalOpen(!isModalOpen)}
-                    className="z-10 flex items-center justify-center p-1 transition-opacity hover:opacity-70"
-                  >
-                    <img
-                      src={FilterIcon}
-                      alt="filter"
-                      className="h-[24px] w-[24px]"
-                    />
-                  </button>
-                </div>
-              )}
+              <div className="mb-[36px] flex items-center justify-between pr-[58px] pl-[32px]">
+                <h3 className="text-[24px] font-semibold text-white">
+                  {keyword ? `“${keyword}” 검색결과` : '최근 본 항목'}
+                </h3>
+                <button
+                  onClick={() => setIsModalOpen(!isModalOpen)}
+                  className="z-10 flex items-center justify-center p-1 transition-opacity hover:opacity-70"
+                >
+                  <img
+                    src={FilterIcon}
+                    alt="filter"
+                    className="h-[24px] w-[24px]"
+                  />
+                </button>
+              </div>
 
               <div className="px-[32px]">
-                {keyword ? (
-                  /* 검색 결과 그리드 */
-                  <div className="grid max-w-fit grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
-                    {searchResults.map((item) => (
-                      <BaseCard key={item.id} item={item} />
-                    ))}
+                {loading ? (
+                  <div className="py-10 text-center text-zinc-500">
+                    데이터를 불러오는 중...
+                  </div>
+                ) : displayPosts.length === 0 ? (
+                  <div className="py-10 text-center text-zinc-600">
+                    자료가 존재하지 않습니다
                   </div>
                 ) : (
-                  /* ✅ 초기 상태: "1시간 전", "12시간 전" 등 시간 섹션 노출 */
-                  <div className="flex flex-col gap-[60px]">
-                    {/* 예시: 1시간 전 섹션 */}
-                    <section>
-                      <h3 className="mb-[24px] text-[24px] font-bold text-white">
-                        1시간 전
-                      </h3>
-                      <div className="grid max-w-fit grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
-                        {allItems.slice(0, 6).map((item) => (
-                          <BaseCard key={item.id} item={item} />
-                        ))}
-                      </div>
-                    </section>
-
-                    {/* 예시: 12시간 전 섹션 */}
-                    <section>
-                      <h3 className="mb-[24px] text-[24px] font-bold text-white">
-                        12시간 전
-                      </h3>
-                      <div className="grid max-w-fit grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
-                        {allItems.slice(6, 12).map((item) => (
-                          <BaseCard key={item.id} item={item} />
-                        ))}
-                      </div>
-                    </section>
+                  <div className="grid grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
+                    {displayPosts.map((item) => (
+                      <TimelineCard
+                        key={item.postId}
+                        item={item}
+                        // ✅ 3. 클릭 시 상세 페이지로 이동하며 데이터 전달
+                        onClick={() =>
+                          navigate(`/post/${item.postId}`, {
+                            state: { post: item },
+                          })
+                        }
+                      />
+                    ))}
                   </div>
                 )}
               </div>
@@ -107,7 +127,6 @@ export default function Recent() {
           </div>
         </div>
 
-        {/* 필터 모달 로직 (외부 클릭 닫기 포함) */}
         {isModalOpen && (
           <>
             <div
@@ -118,7 +137,12 @@ export default function Recent() {
               className="absolute z-50 shadow-2xl"
               style={{ top: '201px', right: '72px' }}
             >
-              <FilterModal />
+              <FilterModal
+                onFilterChange={(newFilter) => {
+                  setFilter(newFilter);
+                  setIsModalOpen(false);
+                }}
+              />
             </div>
           </>
         )}

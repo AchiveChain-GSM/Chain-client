@@ -1,24 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
-import BaseCard from '../components/BaseCard';
+import TimelineCard from '../components/TimelineCard'; // ✅ 서버 변수명 맞춤형 카드
 import SearchInput from '../components/Search/SearchInput';
-import FilterModal from '../components/FilterModal'; // 필터 모달 추가
-import { timelineDummy } from '../data/timelinedummy';
+import FilterModal from '../components/FilterModal';
 import FilterIcon from '../assets/icon/filter.svg';
+import axios from 'axios';
 
 export default function MyData() {
   const [keyword, setKeyword] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false); //  모달 상태 추가
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [posts, setPosts] = useState([]); // 📦 서버 데이터를 담을 곳
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('recent'); // 필터 기본값: 최신순
 
-  // 데이터 안전하게 합치기 및 검색 필터링
-  const myItems = timelineDummy?.flatMap((day) => day.items || []) || [];
-  const filtered = myItems.filter((item) =>
+  // 1. 컴포넌트 로드 및 필터 변경 시 서버 데이터 호출
+  useEffect(() => {
+    const fetchMyPosts = async () => {
+      try {
+        setLoading(true);
+        const userId = localStorage.getItem('userId'); // 🔑 내 자료 조회를 위해 필수
+
+        // 명세서 기반 엔드포인트: /api/posts/written/{userId}/{filter}
+        const response = await axios.get(
+          `/api/posts/written/${userId}/${filter}`,
+        );
+
+        // ✅ 데이터가 배열이든 content 객체든 안전하게 수신
+        const fetchedData = Array.isArray(response.data)
+          ? response.data
+          : response.data.content || [];
+
+        setPosts(fetchedData);
+      } catch (err) {
+        console.error('내 자료 호출 실패:', err);
+        setPosts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMyPosts();
+  }, [filter]); // 필터 바뀔 때마다 다시 가져옴
+
+  // 2. 키워드 검색 필터링
+  const filtered = posts.filter((item) =>
     item.title?.toLowerCase().includes(keyword.toLowerCase()),
   );
 
   return (
     <Layout>
-      {/* relative: 모달 위치의 기준점 */}
       <div className="relative flex h-full px-[24px] pb-[24px]">
         <div className="flex-1 overflow-hidden rounded-xl bg-[#1D1D1D]">
           <div className="custom-scrollbar h-full overflow-y-auto pt-[48px]">
@@ -48,37 +77,41 @@ export default function MyData() {
             </div>
 
             <div className="mt-[36.5px]">
-              {/*  즐겨찾기와 마찬가지로 필터 버튼 상시 노출 */}
               <div className="mb-[36px] flex items-center justify-between pr-[58px] pl-[32px]">
                 <h3 className="text-[24px] font-semibold text-white">
                   {keyword ? `“${keyword}” 검색결과` : ''}
                 </h3>
 
-                {/* 필터 버튼: 아이콘 24px로 축소 적용 */}
                 <button
-                  onClick={() => setIsModalOpen(!isModalOpen)} // 모달 토글
+                  onClick={() => setIsModalOpen(!isModalOpen)}
                   className="z-10 flex items-center justify-center p-1 transition-opacity hover:opacity-70"
                 >
                   <img
                     src={FilterIcon}
                     alt="filter"
-                    className="h-[24px] w-[24px]" //  24px로 조정
+                    className="h-[24px] w-[24px]"
                   />
                 </button>
               </div>
 
               <div className="px-[32px]">
-                <div className="grid max-w-fit grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
-                  {filtered.length === 0 ? (
-                    <div className="col-span-full mt-[60px] text-center text-zinc-600">
-                      자료가 존재하지 않습니다
-                    </div>
-                  ) : (
-                    filtered.map((item) => (
-                      <BaseCard key={item.id} item={item} />
-                    ))
-                  )}
-                </div>
+                {loading ? (
+                  <div className="py-10 text-center text-zinc-500">
+                    불러오는 중...
+                  </div>
+                ) : (
+                  <div className="grid max-w-fit grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
+                    {filtered.length === 0 ? (
+                      <div className="col-span-full mt-[60px] text-center text-zinc-600">
+                        자료가 존재하지 않습니다
+                      </div>
+                    ) : (
+                      filtered.map((item) => (
+                        <TimelineCard key={item.postId} item={item} />
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -86,21 +119,23 @@ export default function MyData() {
           </div>
         </div>
 
-        {/* 외부 클릭 시 닫기 레이어 및 필터 모달 */}
+        {/* 필터 모달 레이어 */}
         {isModalOpen && (
           <>
-            {/* 투명 백드롭 (z-40) */}
             <div
               className="fixed inset-0 z-40"
               onClick={() => setIsModalOpen(false)}
             />
-
-            {/* 필터 모달 (z-50): 위치 일관성 유지 */}
             <div
               className="absolute z-50 shadow-2xl"
               style={{ top: '201px', right: '72px' }}
             >
-              <FilterModal />
+              <FilterModal
+                onFilterChange={(newFilter) => {
+                  setFilter(newFilter);
+                  setIsModalOpen(false);
+                }}
+              />
             </div>
           </>
         )}
