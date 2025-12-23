@@ -84,13 +84,10 @@ export async function createPostComment(postId, content) {
   await api.post(`/api/posts/${postId}/comments`, { content });
 }
 
-
-// 신고 API (필요 시 주석 해제하여 사용)
-/*
 export async function reportPost(postId, payload) {
-  await api.post(`/api/posts/report/${postId}`, payload);
+  const res = await api.post(`/api/posts/report/${postId}`, payload);
+  return res.data;
 }
-*/
 
 export async function deletePost(postId) {
   // 백엔드 스펙: /api/posts/delete/{post_id}

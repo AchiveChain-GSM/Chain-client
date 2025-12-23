@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import checkIcon from '../../assets/icon/check.svg'; // 경로 확인 필요
 import closeIcon from '../../assets/uploadIcon/x.svg'; // 경로 확인 필요
-// import { reportPost } from '../../api/posts'; // (선택) API 함수 분리 시 import
+import { reportPost } from '../../api/posts'; // ✅ API 함수 import
 
 export default function ReportModal({ postId, onClose }) {
   const REPORT_REASONS = [
@@ -18,7 +18,7 @@ export default function ReportModal({ postId, onClose }) {
 
   const [selectedReportReasons, setSelectedReportReasons] = useState([]);
   const [reportEtcText, setReportEtcText] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false); // 중복 전송 방지
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toggleReportReason = (reason) => {
     setSelectedReportReasons((prev) => {
@@ -46,12 +46,8 @@ export default function ReportModal({ postId, onClose }) {
     
     if (isSubmitting) return;
 
-    // 2. 데이터 가공 (백엔드 DTO 규격인 title, description 생성)
-    // title: 선택된 사유들을 쉼표로 연결 (예: "욕설·비하, 스팸·광고")
+    // 2. 데이터 가공
     const titleParam = selectedReportReasons.join(', ');
-    
-    // description: 기타 내용이 있으면 기타 내용, 없으면 선택 사유와 동일하게 설정
-    // (백엔드에서 description이 @NotBlank이므로 빈 값을 보내면 안 됨)
     const descParam = reportEtcText.trim() || titleParam;
 
     const payload = {
@@ -62,26 +58,18 @@ export default function ReportModal({ postId, onClose }) {
     try {
       setIsSubmitting(true);
       
-      // 3. API 호출 (fetch 예시)
-      // 실제 프로젝트 설정에 맞게 axios 또는 커스텀 fetch 함수로 교체하세요.
-      const response = await fetch(`/api/posts/report/${postId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // 'Authorization': `Bearer ${token}`, // 토큰 필요 시 주석 해제
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error('신고 접수 실패');
-      }
+      // ✅ 3. axios API 호출로 교체
+      // fetch와 달리 응답 상태(status) 체크 로직을 직접 작성할 필요가 없습니다.
+      // (에러 발생 시 catch 블록으로 자동 이동됨)
+      await reportPost(postId, payload);
 
       alert('신고가 정상적으로 접수되었습니다.');
       onClose?.(); // 모달 닫기
       
     } catch (error) {
       console.error(error);
+      // axios 에러 객체에서 서버 메시지가 있다면 보여줄 수도 있음
+      // alert(error.response?.data?.message || '신고 처리 중 오류가 발생했습니다.');
       alert('신고 처리 중 오류가 발생했습니다.');
     } finally {
       setIsSubmitting(false);
