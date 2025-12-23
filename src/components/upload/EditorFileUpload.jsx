@@ -38,9 +38,9 @@ export default function EditorFileUpload({
               key={file.id}
               className="flex items-center gap-3 rounded-full bg-[#4f4f4f] p-3 px-4"
             >
-              {file.type?.startsWith('image/') && previews[file.name] ? (
+              {file.type?.startsWith('image/') && previews[file.id] ? (
                 <img
-                  src={previews[file.name]}
+                  src={previews[file.id]}
                   className="h-6 w-6 rounded object-cover"
                   alt={file.name}
                 />
@@ -70,3 +70,4 @@ export default function EditorFileUpload({
     </div>
   );
 }
+
