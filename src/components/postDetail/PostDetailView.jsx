@@ -58,9 +58,9 @@ export default function PostDetailView() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // ✅ TODO: 실제 로그인 시스템 도입 시 Context에서 가져오도록 수정 필요
   const currentUser = { userId: 'me-001', name: '김유찬' };
 
-  // 1. 초기 데이터 설정: 카드를 통해 들어왔다면 그 데이터를 바로 사용하여 검은 화면 방지
   const [postData, setPostData] = useState(() => {
     if (location.state?.post) {
       return normalizePost(location.state.post, id);
@@ -77,12 +77,12 @@ export default function PostDetailView() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
+  // ✅ 수정: 보안을 위해 userId 기반으로만 소유권 확인 (이름 비교 제거)
   const isOwner = useMemo(() => {
-    if (!postData) return false;
+    if (!postData || !currentUser) return false;
     const authorId = postData.author?.userId;
     const myId = currentUser?.userId;
-    if (authorId && myId) return authorId === myId;
-    return (postData.author?.name || '') === (currentUser?.name || '');
+    return authorId === myId;
   }, [postData, currentUser]);
 
   const handleDownload = useCallback((file) => {
@@ -103,7 +103,6 @@ export default function PostDetailView() {
     document.body.removeChild(link);
   }, []);
 
-  // 2. 서버에서 최신 데이터 가져오기 (배경에서 실행)
   useEffect(() => {
     let alive = true;
 
@@ -118,8 +117,8 @@ export default function PostDetailView() {
       })
       .catch((err) => {
         if (!alive) return;
+        // ✅ 수정: 에러 로그를 남겨 디버깅 가능하게 함
         console.error('서버 데이터 로딩 실패:', err);
-        // ✅ 핵심 수정: postData(임시 데이터)가 이미 화면에 떠있다면 에러 메시지를 띄우지 않음
         if (!postData) {
           setError('게시글을 불러올 수 없습니다.');
         }
@@ -128,7 +127,7 @@ export default function PostDetailView() {
     return () => {
       alive = false;
     };
-  }, [id]);
+  }, [id, postData]);
 
   const fetchComments = useCallback(async () => {
     try {
@@ -158,7 +157,8 @@ export default function PostDetailView() {
       await createPostComment(id, commentInput);
       setCommentInput('');
       await fetchComments();
-    } catch {
+    } catch (err) {
+      console.error('댓글 작성 실패:', err);
       alert('댓글 작성에 실패했습니다.');
     } finally {
       setCommentPending(false);
@@ -181,8 +181,9 @@ export default function PostDetailView() {
             }
           : null,
       );
-    } catch {
-      alert('좋아요 실패');
+    } catch (err) {
+      console.error('좋아요 실패:', err);
+      alert('좋아요 처리에 실패했습니다.');
     } finally {
       setLikePending(false);
     }
@@ -204,8 +205,9 @@ export default function PostDetailView() {
             }
           : null,
       );
-    } catch {
-      alert('북마크 실패');
+    } catch (err) {
+      console.error('북마크 실패:', err);
+      alert('북마크 처리에 실패했습니다.');
     } finally {
       setBookmarkPending(false);
     }
@@ -215,6 +217,7 @@ export default function PostDetailView() {
     setIsMenuOpen(false);
     navigate(`/posts/${id}/edit`);
   };
+
   const handleDelete = async () => {
     setIsMenuOpen(false);
     if (!window.confirm('정말 삭제하시겠습니까?')) return;
@@ -222,12 +225,12 @@ export default function PostDetailView() {
       await deletePost(id);
       alert('삭제되었습니다.');
       navigate('/');
-    } catch {
-      alert('삭제 실패');
+    } catch (err) {
+      console.error('삭제 실패:', err);
+      alert('삭제에 실패했습니다.');
     }
   };
 
-  // ⚠️ 진짜 데이터가 아무것도 없을 때만 에러 노출
   if (error && !postData) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-[#121212] text-zinc-400">
@@ -242,7 +245,6 @@ export default function PostDetailView() {
     );
   }
 
-  // 로딩 중일 때도 검은 화면 방지 (배경색 명시)
   if (!postData) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#121212] text-zinc-400">
