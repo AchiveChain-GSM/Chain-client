@@ -7,6 +7,7 @@ export default function PostComments({
   setCommentInput,
   onSubmit,
   currentUser,
+  commentPending = false,
 }) {
   return (
     <div className="pb-20">
@@ -16,15 +17,23 @@ export default function PostComments({
         <input
           type="text"
           value={commentInput}
+          disabled={commentPending}
           onChange={(e) => setCommentInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && onSubmit?.()}
-          placeholder="댓글 내용 입력"
-          className="h-[48px] w-full rounded-lg bg-[#191919] px-4 text-sm text-white outline-none"
+          onKeyDown={(e) => e.key === 'Enter' && !commentPending && onSubmit?.()}
+          placeholder={commentPending ? '등록 중...' : '댓글 내용 입력'}
+          className={[
+            'h-[48px] w-full rounded-lg bg-[#191919] px-4 text-sm text-white outline-none',
+            commentPending ? 'opacity-60' : '',
+          ].join(' ')}
         />
         <button
           type="button"
-          onClick={() => onSubmit?.()}
-          className="absolute top-1/2 right-3 -translate-y-1/2 text-zinc-500 hover:text-white"
+          disabled={commentPending}
+          onClick={() => !commentPending && onSubmit?.()}
+          className={[
+            'absolute top-1/2 right-3 -translate-y-1/2 text-zinc-500 hover:text-white',
+            commentPending ? 'cursor-not-allowed opacity-50' : '',
+          ].join(' ')}
         >
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
@@ -38,7 +47,9 @@ export default function PostComments({
           const authorName = comment.user?.name ?? comment.author ?? '익명';
 
           const isMe =
-            (comment.user?.userId && currentUser?.userId && comment.user.userId === currentUser.userId) ||
+            (comment.user?.userId &&
+              currentUser?.userId &&
+              comment.user.userId === currentUser.userId) ||
             authorName === (currentUser?.name ?? '');
 
           return (
