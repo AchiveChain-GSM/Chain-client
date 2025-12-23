@@ -1,0 +1,45 @@
+export default function EditorStyle() {
+  return (
+    <style jsx global>{`
+      .ProseMirror h1 {
+        font-size: 2.25rem;
+        font-weight: 700;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        line-height: 1.2;
+      }
+      .ProseMirror h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+      }
+      .ProseMirror ul {
+        list-style-type: disc;
+        padding-left: 1.5rem;
+        margin: 1rem 0;
+      }
+      .ProseMirror ol {
+        list-style-type: decimal;
+        padding-left: 1.5rem;
+        margin: 1rem 0;
+      }
+      .ProseMirror li {
+        margin-bottom: 0.25rem;
+      }
+      .ProseMirror blockquote {
+        border-left: 3px solid #555;
+        padding-left: 1rem;
+        color: #aaa;
+        font-style: italic;
+      }
+      .ProseMirror p.is-editor-empty:first-child::before {
+        color: #555;
+        content: attr(data-placeholder);
+        float: left;
+        height: 0;
+        pointer-events: none;
+      }
+    `}</style>
+  );
+}

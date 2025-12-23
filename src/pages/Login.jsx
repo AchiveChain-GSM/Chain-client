@@ -1,15 +1,41 @@
 import React, { useState } from 'react';
-import logo from './assets/logo/logo-vertical-symbol.svg';
-import checkIcon from './assets/icon/check.svg';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import logo from '../assets/logo/logo-vertical-symbol.svg';
+import checkIcon from '../assets/icon/check.svg';
+
+const response = await axios.post('/api/auth/login', {
+  email,
+  password,
+});
 
 const Login = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isAutoLogin, setIsAutoLogin] = useState(false);
   const [isError, setIsError] = useState(false);
 
-  const handleLogin = () => {
-    setIsError(true);
+  const handleLogin = async () => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/login`, {
+        email,
+        password,
+      });
+
+      if (response.data && response.data.accessToken) {
+        localStorage.setItem('accessToken', response.data.accessToken);
+
+        if (response.data.refreshToken) {
+          localStorage.setItem('refreshToken', response.data.refreshToken);
+        }
+
+        setIsError(false);
+        navigate('/');
+      }
+    } catch (error) {
+      setIsError(true);
+    }
   };
 
   return (
@@ -54,7 +80,10 @@ const Login = () => {
             type="email"
             placeholder="이메일 입력"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setIsError(false);
+            }}
             style={{
               width: '511px',
               height: '48px',
@@ -73,7 +102,10 @@ const Login = () => {
             type="password"
             placeholder="비밀번호 입력"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setIsError(false);
+            }}
             style={{
               width: '511px',
               height: '48px',
@@ -151,9 +183,16 @@ const Login = () => {
           className="flex justify-center gap-[12px]"
           style={{ color: '#888888', fontSize: '12px' }}
         >
-          <span className="cursor-pointer">비밀번호 찾기</span>
+          <span
+            className="cursor-pointer"
+            onClick={() => navigate('/find-password')}
+          >
+            비밀번호 찾기
+          </span>
           <span style={{ color: '#2F3233' }}>|</span>
-          <span className="cursor-pointer">회원가입</span>
+          <span className="cursor-pointer" onClick={() => navigate('/signup')}>
+            회원가입
+          </span>
         </div>
       </div>
     </div>
