@@ -21,6 +21,7 @@
   --color-hover: #191919;
   --color-text1: #444444;
   --color-dayHover: #151515;
+  --color-text2: #b1b1b1;
 }
 .custom-scrollbar::-webkit-scrollbar {
   width: 10px;

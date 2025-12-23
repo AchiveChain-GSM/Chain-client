@@ -10,6 +10,7 @@ import Bookmark from './pages/Bookmark';
 import MyData from './pages/mydata';
 import UploadPage from './pages/Upload';
 import FindPassword from './pages/Findps';
+import PostDetail from './pages/PostDetail';
 
 // 2. axios 전역 주소 설정 (.env에 넣은 주소를 가져옵니다)
 axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
@@ -21,7 +22,7 @@ const AppContent = () => {
   );
 
   return (
-    <div style={{ backgroundColor: '#0F0F0F', minHeight: '100vh' }}>
+    <div style={{ backgroundColor: '#1d1d1d', minHeight: '100vh' }}>
       {!hideTopBar && <TopBar />}
       <Routes>
         <Route path="/login" element={<Login />} />
@@ -33,6 +34,7 @@ const AppContent = () => {
         <Route path="/bookmark" element={<Bookmark />} />
         <Route path="/mydata" element={<MyData />} />
         <Route path="/upload" element={<UploadPage />} />
+        <Route path="/posts/:id" element={<PostDetail />} />
       </Routes>
     </div>
   );

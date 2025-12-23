@@ -1,24 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
-const FindPassword = () => {
-  const navigate = useNavigate();
-  const [step, setStep] = useState(1);
-  const [email, setEmail] = useState('');
-  const [authCode, setAuthCode] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+// 프로젝트 전역 설정(App.jsx)을 사용하므로 서버 주소 변수는 삭제했습니다.
+const EMAIL_DOMAIN = '@gsm.hs.kr';
 
-  const baseTextStyle = {
+const STYLES = {
+  baseText: {
     fontFamily: 'Pretendard, sans-serif',
     color: '#FFFFFF',
     fontWeight: '400',
     lineHeight: '1.4',
     letterSpacing: '-0.02em',
-  };
-
-  const commonInputStyle = {
+  },
+  commonInput: {
     height: '48px',
     backgroundColor: '#191919',
     border: 'none',
@@ -29,25 +24,49 @@ const FindPassword = () => {
     outline: 'none',
     fontFamily: 'Pretendard',
     boxSizing: 'border-box',
-  };
+  },
+};
 
-  const handleEmailAuth = () => {
-    if (!email.endsWith('@gsm.hs.kr')) {
+const Findps = () => {
+  const navigate = useNavigate();
+  const [step, setStep] = useState(1);
+  const [email, setEmail] = useState('');
+  const [authCode, setAuthCode] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const handleEmailAuth = async () => {
+    if (!email.endsWith(EMAIL_DOMAIN)) {
       setErrorMessage(
-        'gsm.hs.kr 도메인을 사용하는 계정으로 이메일을 인증해주세요',
+        `${EMAIL_DOMAIN} 도메인을 사용하는 계정으로 이메일을 인증해주세요`,
       );
       return;
     }
-    setErrorMessage('');
-    alert('인증번호가 발송되었습니다. (테스트 번호: 1234)');
+    try {
+      // 주소를 '/api/auth/...' 형태로 단축하여 전역 설정을 따릅니다.
+      await axios.post('/api/auth/send-email', { email });
+      setErrorMessage('');
+      alert('인증번호가 발송되었습니다.');
+    } catch (error) {
+      setErrorMessage(
+        error.response?.data?.message || '인증번호 발송에 실패했습니다.',
+      );
+    }
   };
 
-  const handleVerifyNext = () => {
-    if (authCode === '1234') {
+  const handleVerifyNext = async () => {
+    try {
+      await axios.post('/api/auth/verify-email', {
+        email: email,
+        code: authCode,
+      });
       setErrorMessage('');
       setStep(2);
-    } else {
-      setErrorMessage('인증번호가 일치하지 않습니다');
+    } catch (error) {
+      setErrorMessage(
+        error.response?.data?.message || '인증번호가 일치하지 않습니다.',
+      );
     }
   };
 
@@ -58,7 +77,7 @@ const FindPassword = () => {
     return hasLetter && hasNumber && isLongEnough;
   };
 
-  const handleResetComplete = () => {
+  const handleResetComplete = async () => {
     if (!validatePassword(password)) {
       setErrorMessage(
         '영문과 숫자를 포함하여 8자리 이상으로 비밀번호를 만들어주세요',
@@ -69,9 +88,19 @@ const FindPassword = () => {
       setErrorMessage('비밀번호가 일치하지 않습니다');
       return;
     }
-    localStorage.setItem('userPassword', password);
-    alert('비밀번호가 성공적으로 변경되었습니다.');
-    navigate('/login');
+
+    try {
+      await axios.post('/api/auth/change-password', {
+        email,
+        password,
+      });
+      alert('비밀번호가 성공적으로 변경되었습니다.');
+      navigate('/login');
+    } catch (error) {
+      setErrorMessage(
+        error.response?.data?.message || '비밀번호 변경에 실패했습니다.',
+      );
+    }
   };
 
   return (
@@ -88,7 +117,7 @@ const FindPassword = () => {
           justifyContent: 'center',
         }}
       >
-        <h1 style={{ ...baseTextStyle, fontSize: '32px' }}>
+        <h1 style={{ ...STYLES.baseText, fontSize: '32px' }}>
           {step === 1 ? '비밀번호 찾기' : '비밀번호 재설정'}
         </h1>
       </div>
@@ -122,7 +151,7 @@ const FindPassword = () => {
                 placeholder="이메일"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                style={{ ...commonInputStyle, width: '393px' }}
+                style={{ ...STYLES.commonInput, width: '393px' }}
               />
               <button
                 onClick={handleEmailAuth}
@@ -145,7 +174,7 @@ const FindPassword = () => {
               placeholder="인증번호"
               value={authCode}
               onChange={(e) => setAuthCode(e.target.value)}
-              style={{ ...commonInputStyle, width: '511px' }}
+              style={{ ...STYLES.commonInput, width: '511px' }}
             />
             <div
               style={{
@@ -243,7 +272,7 @@ const FindPassword = () => {
                   setPassword(e.target.value);
                   setErrorMessage('');
                 }}
-                style={{ ...commonInputStyle, width: '511px' }}
+                style={{ ...STYLES.commonInput, width: '511px' }}
               />
               <input
                 type="password"
@@ -253,7 +282,7 @@ const FindPassword = () => {
                   setConfirmPassword(e.target.value);
                   setErrorMessage('');
                 }}
-                style={{ ...commonInputStyle, width: '511px' }}
+                style={{ ...STYLES.commonInput, width: '511px' }}
               />
             </div>
             <div
@@ -290,23 +319,16 @@ const FindPassword = () => {
             >
               <button
                 onClick={handleResetComplete}
-                disabled={password === '' || confirmPassword === ''}
+                disabled={!password || !confirmPassword}
                 style={{
                   width: '511px',
                   height: '48px',
                   borderRadius: '8px',
                   cursor:
-                    password !== '' && confirmPassword !== ''
-                      ? 'pointer'
-                      : 'not-allowed',
+                    password && confirmPassword ? 'pointer' : 'not-allowed',
                   backgroundColor:
-                    password !== '' && confirmPassword !== ''
-                      ? '#E2E2E2'
-                      : '#4E4E4E',
-                  color:
-                    password !== '' && confirmPassword !== ''
-                      ? '#000000'
-                      : '#888888',
+                    password && confirmPassword ? '#E2E2E2' : '#4E4E4E',
+                  color: password && confirmPassword ? '#000000' : '#888888',
                   border: 'none',
                   fontSize: '16px',
                   fontFamily: 'Pretendard',
@@ -338,4 +360,4 @@ const FindPassword = () => {
   );
 };
 
-export default FindPassword;
+export default Findps;
