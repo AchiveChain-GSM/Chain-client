@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import heartIcon from '../../assets/BaseCard/cardheart.svg';
 import bookmarkIcon from '../../assets/BaseCard/cardbookmark.svg';
@@ -12,11 +12,37 @@ import selectHeartIcon from '../../assets/icon/selectHeart.svg';
 
 import PostContent from './PostContent';
 
-export default function PostBody({ postData, onToggleLike, onToggleBookmark }) {
+export default function PostBody({
+  postData,
+  onToggleLike,
+  onToggleBookmark,
+  likePending = false,
+  bookmarkPending = false,
+}) {
   const [hoverLike, setHoverLike] = useState(false);
   const [hoverBookmark, setHoverBookmark] = useState(false);
 
-  if (!postData) return null; 
+  if (!postData) return null;
+
+  useEffect(() => {
+    if (likePending) setHoverLike(false);
+  }, [likePending]);
+
+  useEffect(() => {
+    if (bookmarkPending) setHoverBookmark(false);
+  }, [bookmarkPending]);
+
+  const handleLikeClick = () => {
+    if (likePending) return;
+    setHoverLike(false);
+    onToggleLike?.();
+  };
+
+  const handleBookmarkClick = () => {
+    if (bookmarkPending) return;
+    setHoverBookmark(false);
+    onToggleBookmark?.();
+  };
 
   const likeIconSrc = postData.isLiked
     ? selectHeartIcon
@@ -47,10 +73,14 @@ export default function PostBody({ postData, onToggleLike, onToggleBookmark }) {
       <div className="mb-12 flex items-center gap-4 text-[13px] text-zinc-500">
         <button
           type="button"
-          onClick={onToggleLike}
-          onMouseEnter={() => setHoverLike(true)}
+          onClick={handleLikeClick}
+          onMouseEnter={() => !likePending && setHoverLike(true)}
           onMouseLeave={() => setHoverLike(false)}
-          className="flex items-center gap-1.5 hover:text-white"
+          disabled={likePending}
+          className={[
+            'flex items-center gap-1.5 hover:text-white',
+            likePending ? 'cursor-not-allowed opacity-50' : '',
+          ].join(' ')}
         >
           <img src={likeIconSrc} alt="" className="h-4 w-4" />
           <span>{postData.likeCount}</span>
@@ -58,10 +88,14 @@ export default function PostBody({ postData, onToggleLike, onToggleBookmark }) {
 
         <button
           type="button"
-          onClick={onToggleBookmark}
-          onMouseEnter={() => setHoverBookmark(true)}
+          onClick={handleBookmarkClick}
+          onMouseEnter={() => !bookmarkPending && setHoverBookmark(true)}
           onMouseLeave={() => setHoverBookmark(false)}
-          className="flex items-center gap-1.5 hover:text-white"
+          disabled={bookmarkPending}
+          className={[
+            'flex items-center gap-1.5 hover:text-white',
+            bookmarkPending ? 'cursor-not-allowed opacity-50' : '',
+          ].join(' ')}
         >
           <img src={bookmarkIconSrc} alt="" className="h-4 w-4" />
           <span>{postData.bookmarkCount}</span>

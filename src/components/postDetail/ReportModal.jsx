@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import checkIcon from '../../assets/icon/check.svg';
-import closeIcon from '../../assets/uploadIcon/x.svg';
+import checkIcon from '../../assets/icon/check.svg'; // 경로 확인 필요
+import closeIcon from '../../assets/uploadIcon/x.svg'; // 경로 확인 필요
+// import { reportPost } from '../../api/posts'; // (선택) API 함수 분리 시 import
 
 export default function ReportModal({ postId, onClose }) {
-  // --- [신고 모달] 다중 선택 + 기타 입력 ---
   const REPORT_REASONS = [
     '욕설·비하',
     '혐오·차별 발언',
@@ -16,8 +16,9 @@ export default function ReportModal({ postId, onClose }) {
     '기타',
   ];
 
-  const [selectedReportReasons, setSelectedReportReasons] = useState([]); // string[]
+  const [selectedReportReasons, setSelectedReportReasons] = useState([]);
   const [reportEtcText, setReportEtcText] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false); // 중복 전송 방지
 
   const toggleReportReason = (reason) => {
     setSelectedReportReasons((prev) => {
@@ -26,14 +27,13 @@ export default function ReportModal({ postId, onClose }) {
         ? prev.filter((r) => r !== reason)
         : [...prev, reason];
 
-      // '기타' 해제 시 입력값도 비워주기
       if (exists && reason === '기타') setReportEtcText('');
-
       return next;
     });
   };
 
-  const handleReportSubmit = () => {
+  const handleReportSubmit = async () => {
+    // 1. 유효성 검사
     if (selectedReportReasons.length === 0) {
       alert('신고 사유를 1개 이상 선택해주세요.');
       return;
@@ -43,23 +43,49 @@ export default function ReportModal({ postId, onClose }) {
       alert('기타 사유를 입력해주세요.');
       return;
     }
+    
+    if (isSubmitting) return;
 
-    // 나중에 백엔드 붙일 때 보낼 payload 예시
+    // 2. 데이터 가공 (백엔드 DTO 규격인 title, description 생성)
+    // title: 선택된 사유들을 쉼표로 연결 (예: "욕설·비하, 스팸·광고")
+    const titleParam = selectedReportReasons.join(', ');
+    
+    // description: 기타 내용이 있으면 기타 내용, 없으면 선택 사유와 동일하게 설정
+    // (백엔드에서 description이 @NotBlank이므로 빈 값을 보내면 안 됨)
+    const descParam = reportEtcText.trim() || titleParam;
+
     const payload = {
-      targetType: 'POST',
-      targetId: postId,
-      reasonCodes: selectedReasons, // TODO: 백엔드가 코드 형태를 원하면 여기서 매핑
-      message: selectedReasons.includes('기타') ? etcReason.trim() : '',
+      title: titleParam,
+      description: descParam,
     };
 
-    console.log('REPORT_PAYLOAD', payload);
+    try {
+      setIsSubmitting(true);
+      
+      // 3. API 호출 (fetch 예시)
+      // 실제 프로젝트 설정에 맞게 axios 또는 커스텀 fetch 함수로 교체하세요.
+      const response = await fetch(`/api/posts/report/${postId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // 'Authorization': `Bearer ${token}`, // 토큰 필요 시 주석 해제
+        },
+        body: JSON.stringify(payload),
+      });
 
-    alert('신고가 정상적으로 접수되었습니다.');
-    onClose?.();
+      if (!response.ok) {
+        throw new Error('신고 접수 실패');
+      }
 
-    // 모달 닫을 때 초기화
-    setSelectedReportReasons([]);
-    setReportEtcText('');
+      alert('신고가 정상적으로 접수되었습니다.');
+      onClose?.(); // 모달 닫기
+      
+    } catch (error) {
+      console.error(error);
+      alert('신고 처리 중 오류가 발생했습니다.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -118,7 +144,7 @@ export default function ReportModal({ postId, onClose }) {
 
         <button
           onClick={handleReportSubmit}
-          disabled={selectedReportReasons.length === 0}
+          disabled={selectedReportReasons.length === 0 || isSubmitting}
           className={[
             'mb-3 w-full rounded-lg py-3 text-sm font-medium transition-colors',
             selectedReportReasons.length > 0
@@ -126,7 +152,7 @@ export default function ReportModal({ postId, onClose }) {
               : 'cursor-not-allowed bg-white/10 text-zinc-500',
           ].join(' ')}
         >
-          신고 제출
+          {isSubmitting ? '처리 중...' : '신고 제출'}
         </button>
       </div>
     </div>
