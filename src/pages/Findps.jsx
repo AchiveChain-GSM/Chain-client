@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}api/auth`; // .env 파일의 VITE_API_BASE_URL을 사용함
+// 프로젝트 전역 설정(App.jsx)을 사용하므로 중복된 서버 주소 변수는 제거했습니다.
 const EMAIL_DOMAIN = '@gsm.hs.kr';
 
 const STYLES = {
@@ -44,7 +44,8 @@ const Findps = () => {
       return;
     }
     try {
-      await axios.post(`${API_BASE_URL}/send-email`, { email });
+      // 주소를 '/api/auth/...' 형태로 단축하여 전역 설정을 따릅니다.
+      await axios.post('/api/auth/send-email', { email });
       setErrorMessage('');
       alert('인증번호가 발송되었습니다.');
     } catch (error) {
@@ -56,7 +57,7 @@ const Findps = () => {
 
   const handleVerifyNext = async () => {
     try {
-      await axios.post(`${API_BASE_URL}/verify-email`, {
+      await axios.post('/api/auth/verify-email', {
         email: email,
         code: authCode,
       });
@@ -89,9 +90,9 @@ const Findps = () => {
     }
 
     try {
-      await axios.post(`${API_BASE_URL}/change-password`, {
+      await axios.post('/api/auth/change-password', {
         email,
-        password
+        password,
       });
       alert('비밀번호가 성공적으로 변경되었습니다.');
       navigate('/login');

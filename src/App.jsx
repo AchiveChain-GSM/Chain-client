@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import axios from 'axios';
 import TopBar from './components/topbar';
 import Login from './pages/Login';
 import Timeline from './pages/Timeline';
@@ -10,6 +11,9 @@ import MyData from './pages/mydata';
 import UploadPage from './pages/Upload';
 import FindPassword from './pages/Findps';
 import PostDetail from './pages/PostDetail';
+
+// axios 전역 주소 설정 (.env에 넣은 주소를 가져옵니다)
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
 
 const AppContent = () => {
   const location = useLocation();

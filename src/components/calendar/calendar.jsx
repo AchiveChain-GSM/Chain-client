@@ -8,7 +8,7 @@ const postExistedDays = [
   { year: 2025, month: 12, day: 18 },
 ];
 
-export default function Calendar() {
+export default function Calendar({ onDateChange }) {
   const now = useMemo(() => new Date(), []);
   const startYear = now.getFullYear();
   const startMonth = now.getMonth() + 1;
@@ -22,11 +22,18 @@ export default function Calendar() {
 
   const [viewYear, setViewYear] = useState(startYear);
 
+  // 날짜 변경 시 부모(Timeline)에게 알림
+  useEffect(() => {
+    if (onDateChange) {
+      const newDate = new Date(selected.year, selected.month - 1, 1);
+      onDateChange(newDate);
+    }
+  }, [selected.year, selected.month]);
+
   const calendarData = useMemo(() => {
     const result = [];
     let y = startYear;
     let m = startMonth;
-
     let group = { year: y, months: [] };
 
     while (y > endYear || (y === endYear && m >= 1)) {
@@ -34,16 +41,13 @@ export default function Calendar() {
         result.push(group);
         group = { year: y, months: [] };
       }
-
       group.months.push({ year: y, month: m });
-
       m -= 1;
       if (m < 1) {
         m = 12;
         y -= 1;
       }
     }
-
     result.push(group);
     return result;
   }, [startYear, startMonth, endYear]);
@@ -55,28 +59,18 @@ export default function Calendar() {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => {
-          if (e.isIntersecting) {
-            setViewYear(Number(e.target.dataset.year));
-          }
+          if (e.isIntersecting) setViewYear(Number(e.target.dataset.year));
         });
       },
-      {
-        root: containerRef.current,
-        rootMargin: '-50% 0px -50% 0px',
-      },
+      { root: containerRef.current, rootMargin: '-50% 0px -50% 0px' },
     );
-
-    Object.values(yearRefs.current).forEach(
-      (el) => el && observer.observe(el),
-    );
-
+    Object.values(yearRefs.current).forEach((el) => el && observer.observe(el));
     return () => observer.disconnect();
   }, [calendarData]);
 
   return (
     <aside className="bg-bg flex h-full w-[390px] flex-col overflow-hidden rounded-t-lg">
       <CalendarHeader year={viewYear} />
-
       <div
         ref={containerRef}
         className="custom-scrollbar mr-[24px] ml-[12px] flex-1 overflow-y-auto"
@@ -86,7 +80,7 @@ export default function Calendar() {
             key={group.year}
             data-year={group.year}
             ref={(el) => (yearRefs.current[group.year] = el)}
-            className="flex flex-col gap-4 mb-4"
+            className="mb-4 flex flex-col gap-4"
           >
             {group.months.map(({ year, month }) => (
               <CalendarMonth
