@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import checkIcon from '../assets/icon/check.svg';
 
 const Signup = () => {
@@ -40,27 +41,36 @@ const Signup = () => {
     boxSizing: 'border-box',
   };
 
-  const handleEmailAuth = () => {
-    if (email === 'test@gsm.hs.kr') {
-      setErrorMessage('이미 계정이 등록된 이메일입니다');
-      return;
-    }
+  const handleEmailAuth = async () => {
     if (!email.endsWith('@gsm.hs.kr')) {
       setErrorMessage(
         'gsm.hs.kr 도메인을 사용하는 계정으로 이메일을 인증해주세요',
       );
       return;
     }
-    setErrorMessage('');
-    alert('인증번호가 발송되었습니다. (테스트 번호: 1234)');
+    try {
+      await axios.post('/api/auth/send-email', { email });
+      setErrorMessage('');
+      alert('인증번호가 발송되었습니다.');
+    } catch (error) {
+      setErrorMessage(
+        error.response?.data?.message || '인증번호 발송에 실패했습니다.',
+      );
+    }
   };
 
-  const handleStep2Next = () => {
-    if (authCode === '1234') {
+  const handleStep2Next = async () => {
+    try {
+      await axios.post('/api/auth/verify-email', {
+        email: email,
+        code: authCode,
+      });
       setErrorMessage('');
       setStep(3);
-    } else {
-      setErrorMessage('인증번호가 일치하지 않습니다');
+    } catch (error) {
+      setErrorMessage(
+        error.response?.data?.message || '인증번호가 일치하지 않습니다.',
+      );
     }
   };
 
@@ -86,15 +96,48 @@ const Signup = () => {
     setStep(4);
   };
 
-  const handleComplete = () => {
-    navigate('/timeline');
+  const handleComplete = async () => {
+    const genNum = Number(generation);
+    const classNum = Number(userClass);
+    const admissionNum = Number(userNumber);
+
+    if (isNaN(genNum) || isNaN(classNum) || isNaN(admissionNum)) {
+      setErrorMessage('기수, 반, 번호에는 숫자만 입력해주세요.');
+      return;
+    }
+
+    try {
+      await axios.post('/api/auth/sign-up', {
+        email,
+        password,
+        name: userName,
+        generation: genNum,
+        classNumber: classNum,
+        admissionNumber: admissionNum,
+      });
+      alert('회원가입이 완료되었습니다!');
+      navigate('/login');
+    } catch (error) {
+      setErrorMessage(
+        error.response?.data?.message ||
+          '회원가입 처리 중 오류가 발생했습니다.',
+      );
+    }
   };
 
   const isStep4Valid =
-    userName !== '' &&
-    generation !== '' &&
-    userClass !== '' &&
-    userNumber !== '';
+    userName.trim() !== '' &&
+    generation.trim() !== '' &&
+    userClass.trim() !== '' &&
+    userNumber.trim() !== '';
+
+  const handleNumberChange = (setter) => (e) => {
+    const value = e.target.value;
+    if (value === '' || /^[0-9]+$/.test(value)) {
+      setter(value);
+      setErrorMessage('');
+    }
+  };
 
   return (
     <div
@@ -510,7 +553,7 @@ const Signup = () => {
           <div
             style={{
               width: '559px',
-              height: '268px',
+              height: '308px',
               backgroundColor: '#1D1D1D',
               borderRadius: '12px',
               padding: '24px',
@@ -541,24 +584,44 @@ const Signup = () => {
                   type="text"
                   placeholder="기수"
                   value={generation}
-                  onChange={(e) => setGeneration(e.target.value)}
+                  onChange={handleNumberChange(setGeneration)}
                   style={{ ...commonInputStyle, width: '162.33px' }}
                 />
                 <input
                   type="text"
                   placeholder="반"
                   value={userClass}
-                  onChange={(e) => setUserClass(e.target.value)}
+                  onChange={handleNumberChange(setUserClass)}
                   style={{ ...commonInputStyle, width: '162.33px' }}
                 />
                 <input
                   type="text"
                   placeholder="번호"
                   value={userNumber}
-                  onChange={(e) => setUserNumber(e.target.value)}
+                  onChange={handleNumberChange(setUserNumber)}
                   style={{ ...commonInputStyle, width: '162.33px' }}
                 />
               </div>
+            </div>
+            <div
+              style={{
+                width: '511px',
+                height: '20px',
+                marginTop: '10px',
+                textAlign: 'right',
+              }}
+            >
+              {errorMessage && (
+                <span
+                  style={{
+                    color: '#FF5050',
+                    fontSize: '14px',
+                    fontFamily: 'Pretendard',
+                  }}
+                >
+                  {errorMessage}
+                </span>
+              )}
             </div>
             <div
               style={{
