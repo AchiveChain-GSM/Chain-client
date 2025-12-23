@@ -3,14 +3,14 @@ import TimelineCard from '../components/TimelineCard';
 import Calendar from '../components/calendar/calendar';
 import SearchInput from '../components/Search/SearchInput';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // ✅ 1. 이동 도구 가져오기
 import axios from 'axios';
 
 export default function Timeline() {
+  const navigate = useNavigate(); // ✅ 2. 이동 함수 선언
   const [keyword, setKeyword] = useState('');
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // 추가: 현재 선택된 날짜를 관리하는 상태 (기본값: 오늘)
   const [currentDate, setCurrentDate] = useState(new Date());
 
   useEffect(() => {
@@ -18,41 +18,45 @@ export default function Timeline() {
       try {
         setLoading(true);
 
-        // 연도와 월을 추출하여 API 요청 날짜를 생성합니다.
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth() + 1;
-        const lastDay = new Date(year, month, 0).getDate(); // 해당 월의 마지막 날 계산
+        const lastDay = new Date(year, month, 0).getDate();
         const formattedMonth = String(month).padStart(2, '0');
 
-        // 하드코딩된 날짜를 변수로 교체 (봇 지적 사항 해결)
         const response = await axios.post('/api/posts/timeline', {
           from: `${year}-${formattedMonth}-01T00:00:00Z`,
           to: `${year}-${formattedMonth}-${lastDay}T23:59:59Z`,
         });
 
-        setPosts(response.data);
+        const fetchedData = Array.isArray(response.data)
+          ? response.data
+          : response.data.content || [];
+
+        setPosts(fetchedData);
       } catch (error) {
         console.error('타임라인 로딩 에러:', error);
+        setPosts([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchTimeline();
-  }, [currentDate]); // currentDate가 바뀔 때마다 데이터를 다시 불러옵니다.
+  }, [currentDate]);
 
   const searchResults = posts.filter((item) =>
-    item.title.toLowerCase().includes(keyword.toLowerCase()),
+    item.title?.toLowerCase().includes(keyword.toLowerCase()),
   );
 
   return (
     <Layout>
       <div className="flex h-full gap-[24px] px-[24px] pb-[24px]">
+        {/* 캘린더 영역 */}
         <div className="scrollbar-hide w-[390px] shrink-0 overflow-y-auto">
-          {/* 캘린더에서 날짜가 바뀔 때 currentDate를 업데이트하도록 연결합니다. */}
           <Calendar onDateChange={(date) => setCurrentDate(date)} />
         </div>
 
+        {/* 콘텐츠 영역 */}
         <div className="flex-1 overflow-hidden rounded-xl bg-[#1D1D1D]">
           <div className="custom-scrollbar h-full overflow-y-auto px-[32px] pt-[48px]">
             <style jsx>{`
@@ -71,7 +75,6 @@ export default function Timeline() {
               }
             `}</style>
 
-            {/* 현재 보고 있는 월을 동적으로 표시합니다. */}
             <h2 className="text-[40px] font-bold tracking-tight text-white">
               {currentDate.getMonth() + 1}월
             </h2>
@@ -85,26 +88,35 @@ export default function Timeline() {
                 <div className="mt-[60px] text-center text-[14px] text-zinc-500">
                   데이터를 불러오는 중...
                 </div>
-              ) : keyword ? (
-                /* 검색어가 있을 때 보여주는 UI */
-                <div className="mt-[12px]">
-                  <h3 className="mb-[36px] text-[24px] font-semibold text-white">
-                    “{keyword}” 검색결과
-                  </h3>
-                  {searchResults.length > 0 && (
-                    <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                      {searchResults.map((item) => (
-                        <TimelineCard key={item.postId} item={item} />
-                      ))}
-                    </div>
-                  )}
-                </div>
               ) : (
-                /* 검색어가 없을 때 보여주는 기본 UI */
-                <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                  {posts.map((item) => (
-                    <TimelineCard key={item.postId} item={item} />
-                  ))}
+                <div className="mt-[12px]">
+                  {keyword && (
+                    <h3 className="mb-[36px] text-[24px] font-semibold text-white">
+                      “{keyword}” 검색결과
+                    </h3>
+                  )}
+
+                  <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                    {(keyword ? searchResults : posts).map((item) => (
+                      <TimelineCard
+                        key={item.postId}
+                        item={item}
+                        // ✅ 3. 클릭 시 상세 페이지로 이동하며 데이터 전달
+                        onClick={() =>
+                          navigate(`/post/${item.postId}`, {
+                            state: { post: item },
+                          })
+                        }
+                      />
+                    ))}
+                  </div>
+
+                  {!loading &&
+                    (keyword ? searchResults : posts).length === 0 && (
+                      <div className="mt-[60px] text-center text-zinc-600">
+                        자료가 존재하지 않습니다.
+                      </div>
+                    )}
                 </div>
               )}
             </div>

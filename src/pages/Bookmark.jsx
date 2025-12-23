@@ -1,28 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
-import BaseCard from '../components/BaseCard';
+import TimelineCard from '../components/TimelineCard';
 import SearchInput from '../components/Search/SearchInput';
-import FilterModal from '../components/FilterModal'; // 필터 모달 추가
-import { timelineDummy } from '../data/timelinedummy';
+import FilterModal from '../components/FilterModal';
 import FilterIcon from '../assets/icon/filter.svg';
+import axios from 'axios';
+
+// ✅ 명세서 이미지에 따른 필터 경로 매핑
+const BOOKMARK_FILTERS = {
+  recent: 'recent', // 최신순
+  popular: 'likes', // 좋아요순
+  views: 'views', // 조회수순
+};
 
 export default function Bookmark() {
+  const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false); // 모달 상태 추가
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('recent');
 
-  // isBookmarked: true인 데이터만 필터링
-  const allBookmarks =
-    timelineDummy
-      ?.flatMap((day) => day.items || [])
-      .filter((item) => item.isBookmarked === true) || [];
+  useEffect(() => {
+    const fetchBookmarks = async () => {
+      // ✅ 1. 코드 리뷰 반영: 사용자 식별자(userId) 가져오기
+      const userId = localStorage.getItem('userId');
 
-  const filteredItems = allBookmarks.filter((item) =>
+      // ✅ 2. 코드 리뷰 반영: 로그인이 안 된 경우 처리
+      if (!userId) {
+        console.error('즐겨찾기 목록을 불러오려면 로그인이 필요합니다.');
+        setPosts([]);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const filterPath = BOOKMARK_FILTERS[filter] || '';
+
+        // ✅ 3. 코드 리뷰 반영: API 경로에 userId 포함
+        const response = await axios.get(
+          `/api/posts/bookmarked/${userId}/${filterPath}`,
+        );
+
+        const fetchedData = Array.isArray(response.data)
+          ? response.data
+          : response.data.content || [];
+
+        setPosts(fetchedData);
+      } catch (err) {
+        console.error('즐겨찾기 목록 호출 실패:', err);
+        setPosts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBookmarks();
+  }, [filter]);
+
+  const filteredItems = posts.filter((item) =>
     item.title?.toLowerCase().includes(keyword.toLowerCase()),
   );
 
   return (
     <Layout>
-      {/* relative 설정: 모달 위치의 기준점 */}
       <div className="relative flex h-full px-[24px] pb-[24px]">
         <div className="flex-1 overflow-hidden rounded-xl bg-[#1D1D1D]">
           <div className="custom-scrollbar h-full overflow-y-auto pt-[48px]">
@@ -55,14 +97,12 @@ export default function Bookmark() {
             </div>
 
             <div className="mt-[36.5px]">
-              {/* 즐겨찾기는 검색어 여부와 상관없이 필터 버튼 항상 노출 */}
               <div className="mb-[36px] flex items-center justify-between pr-[58px] pl-[32px]">
                 <h3 className="text-[24px] font-semibold text-white">
                   {keyword ? `“${keyword}” 검색결과` : ''}
                 </h3>
-
                 <button
-                  onClick={() => setIsModalOpen(!isModalOpen)} // 모달 토글
+                  onClick={() => setIsModalOpen(!isModalOpen)}
                   className="z-10 flex items-center justify-center p-1 transition-opacity hover:opacity-70"
                 >
                   <img
@@ -74,35 +114,39 @@ export default function Bookmark() {
               </div>
 
               <div className="px-[32px]">
-                <div className="grid max-w-fit grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
-                  {keyword ? (
-                    filteredItems.length === 0 ? (
+                {loading ? (
+                  <div className="py-10 text-center text-zinc-500">
+                    데이터를 불러오는 중...
+                  </div>
+                ) : (
+                  <div className="grid max-w-fit grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
+                    {filteredItems.length === 0 ? (
                       <div className="col-span-full mt-[60px] text-center text-zinc-600">
-                        검색 결과가 없습니다.
+                        {keyword
+                          ? '검색 결과가 없습니다.'
+                          : '즐겨찾기한 자료가 없습니다.'}
                       </div>
                     ) : (
                       filteredItems.map((item) => (
-                        <BaseCard key={item.id} item={item} />
+                        <TimelineCard
+                          key={item.postId}
+                          item={item}
+                          onClick={() =>
+                            navigate(`/post/${item.postId}`, {
+                              state: { post: item },
+                            })
+                          }
+                        />
                       ))
-                    )
-                  ) : allBookmarks.length === 0 ? (
-                    <div className="col-span-full mt-[60px] text-center text-zinc-600">
-                      즐겨찾기한 자료가 없습니다.
-                    </div>
-                  ) : (
-                    allBookmarks.map((item) => (
-                      <BaseCard key={item.id} item={item} />
-                    ))
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
-
             <div className="h-[100px]" />
           </div>
         </div>
 
-        {/* 외부 클릭 시 닫기 및 필터 모달 레이아웃 */}
         {isModalOpen && (
           <>
             <div
@@ -113,7 +157,12 @@ export default function Bookmark() {
               className="absolute z-50 shadow-2xl"
               style={{ top: '201px', right: '72px' }}
             >
-              <FilterModal />
+              <FilterModal
+                onFilterChange={(newFilter) => {
+                  setFilter(newFilter);
+                  setIsModalOpen(false);
+                }}
+              />
             </div>
           </>
         )}

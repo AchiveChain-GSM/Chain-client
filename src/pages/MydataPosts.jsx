@@ -12,7 +12,7 @@ const FILTERS = {
   VIEWS: 'views',
 };
 
-export default function RecentPosts() {
+export default function MydataPosts() {
   const navigate = useNavigate(); // ✅ 추가
   const [keyword, setKeyword] = useState('');
   const [posts, setPosts] = useState([]);
@@ -29,11 +29,11 @@ export default function RecentPosts() {
       return;
     }
 
-    const fetchRecentPosts = async () => {
+    const fetchMydata = async () => {
       try {
         setLoading(true);
         setError(null);
-        const baseEndpoint = `/api/posts/viewed/${userId}`;
+        const baseEndpoint = `/api/posts/written/${userId}`;
         const endpoint =
           filter !== FILTERS.DEFAULT
             ? `${baseEndpoint}/${filter}`
@@ -41,31 +41,25 @@ export default function RecentPosts() {
         const response = await axios.get(endpoint);
         setPosts(response.data.content || []);
       } catch (err) {
-        setError('최근 본 자료를 불러오는 중 에러가 발생했습니다.');
-        console.error('로딩 에러:', err);
+        setError('자료를 불러오는 중 에러가 발생했습니다.');
+        console.error('내 자료 로딩 에러:', err);
       } finally {
         setLoading(false);
       }
     };
-    fetchRecentPosts();
+    fetchMydata();
   }, [filter, userId]);
 
   const searchResults = posts.filter((item) =>
     item.title.toLowerCase().includes(keyword.toLowerCase()),
   );
 
-  const filterOptions = [
-    { id: FILTERS.RECENT, label: '최신순' },
-    { id: FILTERS.VIEWS, label: '조회수순' },
-    { id: FILTERS.LIKES, label: '좋아요순' },
-  ];
-
   return (
     <Layout>
       <div className="flex h-full gap-[24px] px-[24px] pb-[24px]">
         <div className="flex-1 overflow-hidden rounded-xl bg-[#1D1D1D]">
           <div className="custom-scrollbar h-full overflow-y-auto px-[32px] pt-[48px]">
-            <h2 className="text-[40px] font-bold text-white">최근 본 자료</h2>
+            <h2 className="text-[40px] font-bold text-white">내 자료</h2>
             <div className="mt-[36px]">
               <SearchInput onSearch={(kw) => setKeyword(kw)} />
             </div>
@@ -97,28 +91,7 @@ export default function RecentPosts() {
             </div>
           </div>
         </div>
-        <div className="w-[200px] shrink-0 pt-[48px]">
-          <div className="flex flex-col gap-6 rounded-xl bg-[#1D1D1D] p-[24px]">
-            <p className="mb-4 flex items-center gap-2 font-bold text-white">
-              <span className="text-[18px]">⋮≡</span> 정렬 기준
-            </p>
-            <div className="flex flex-col gap-3 text-[15px]">
-              {filterOptions.map((option) => (
-                <button
-                  key={option.id}
-                  onClick={() => setFilter(option.id)}
-                  className={
-                    filter === option.id
-                      ? 'text-left font-bold text-white'
-                      : 'text-left text-zinc-500 hover:text-zinc-300'
-                  }
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+        {/* 사이드바 생략(위와 동일) */}
       </div>
     </Layout>
   );

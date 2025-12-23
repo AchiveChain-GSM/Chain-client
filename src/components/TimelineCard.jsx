@@ -1,13 +1,18 @@
 import React from 'react';
 
-export default function TimelineCard({ item }) {
+// ✅ onClick 프롭을 추가하여 외부(Search, Timeline 등)에서 넘겨준 이동 함수를 받습니다.
+export default function TimelineCard({ item, onClick }) {
   // 1. 태그 처리: 명세서의 'tags' 배열 사용
   const maxTags = 3;
   const tagsToShow = item?.tags?.slice(0, maxTags) || [];
   const remainingCount = (item?.tags?.length || 0) - maxTags;
 
   return (
-    <div className="group flex w-full flex-col text-white">
+    <div
+      // ✅ 클릭 이벤트 연결 및 커서 모양 변경
+      onClick={onClick}
+      className="group flex w-full cursor-pointer flex-col text-white"
+    >
       {/* 1. 이미지 영역: 명세서의 'firstImageUrl' 사용 */}
       <div className="relative aspect-[200/120] w-full overflow-hidden rounded-lg bg-[#2A2A2A]">
         {item?.firstImageUrl ? (
@@ -21,7 +26,7 @@ export default function TimelineCard({ item }) {
         )}
       </div>
 
-      {/* 2. 텍스트 영역: 명세서의 'title', 'author', 'content' 사용 */}
+      {/* 2. 텍스트 영역: 명세서의 'title', 'author' 사용 */}
       <div className="mt-[12px] flex flex-col gap-[4px]">
         <h4 className="truncate text-[18px] font-semibold text-[#FFFFFF]">
           {item?.title || '제목 없음'}
@@ -29,7 +34,7 @@ export default function TimelineCard({ item }) {
         <p className="text-[14px] font-light text-[#AAAAAA]">
           {item?.author || '작성자 미상'}
         </p>
-        {/* description 대신 명세서의 'content'를 요약해서 보여줌 */}
+        {/* 명세서의 'content'를 요약해서 보여줌 */}
         <p className="mt-[4px] line-clamp-2 h-[40px] text-[14px] font-light text-[#AAAAAA]">
           {item?.content}
         </p>
