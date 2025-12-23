@@ -3,11 +3,29 @@ import TimelineCard from '../components/TimelineCard';
 import Calendar from '../components/calendar/calendar';
 import SearchInput from '../components/Search/SearchInput';
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // ✅ 1. 이동 도구 가져오기
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+// ✅ 임시 데이터 정의
+const DUMMY_POSTS = [
+  {
+    postId: 't-1',
+    title: '오늘의 리액트 공부 기록',
+    author: '민선',
+    tags: ['React', 'TIL'],
+    firstImageUrl: 'https://picsum.photos/400/240?random=11',
+  },
+  {
+    postId: 't-2',
+    title: '디자인 원복 및 기능 수정',
+    author: '민선',
+    tags: ['UI', 'Fixed'],
+    firstImageUrl: 'https://picsum.photos/400/240?random=12',
+  },
+];
+
 export default function Timeline() {
-  const navigate = useNavigate(); // ✅ 2. 이동 함수 선언
+  const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,7 +35,6 @@ export default function Timeline() {
     const fetchTimeline = async () => {
       try {
         setLoading(true);
-
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth() + 1;
         const lastDay = new Date(year, month, 0).getDate();
@@ -32,10 +49,12 @@ export default function Timeline() {
           ? response.data
           : response.data.content || [];
 
-        setPosts(fetchedData);
+        // ✅ 서버에 실제 데이터가 있으면 그것을 쓰고, 없으면 임시 데이터를 넣습니다.
+        setPosts(fetchedData.length > 0 ? fetchedData : DUMMY_POSTS);
       } catch (error) {
         console.error('타임라인 로딩 에러:', error);
-        setPosts([]);
+        // ✅ 에러가 났을 때(예: 401 에러)도 화면 확인을 위해 임시 데이터를 보여줍니다.
+        setPosts(DUMMY_POSTS);
       } finally {
         setLoading(false);
       }
@@ -51,12 +70,12 @@ export default function Timeline() {
   return (
     <Layout>
       <div className="flex h-full gap-[24px] px-[24px] pb-[24px]">
-        {/* 캘린더 영역 */}
+        {/* 캘린더 영역 (민선님 코드 그대로 유지) */}
         <div className="scrollbar-hide w-[390px] shrink-0 overflow-y-auto">
           <Calendar onDateChange={(date) => setCurrentDate(date)} />
         </div>
 
-        {/* 콘텐츠 영역 */}
+        {/* 콘텐츠 영역 (민선님 코드 그대로 유지) */}
         <div className="flex-1 overflow-hidden rounded-xl bg-[#1D1D1D]">
           <div className="custom-scrollbar h-full overflow-y-auto px-[32px] pt-[48px]">
             <style jsx>{`
@@ -101,7 +120,6 @@ export default function Timeline() {
                       <TimelineCard
                         key={item.postId}
                         item={item}
-                        // ✅ 3. 클릭 시 상세 페이지로 이동하며 데이터 전달
                         onClick={() =>
                           navigate(`/post/${item.postId}`, {
                             state: { post: item },

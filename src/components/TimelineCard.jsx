@@ -1,19 +1,16 @@
 import React from 'react';
 
-// ✅ onClick 프롭을 추가하여 외부(Search, Timeline 등)에서 넘겨준 이동 함수를 받습니다.
 export default function TimelineCard({ item, onClick }) {
-  // 1. 태그 처리: 명세서의 'tags' 배열 사용
+  // 태그는 3개까지만 깔끔하게 표시
   const maxTags = 3;
   const tagsToShow = item?.tags?.slice(0, maxTags) || [];
-  const remainingCount = (item?.tags?.length || 0) - maxTags;
 
   return (
     <div
-      // ✅ 클릭 이벤트 연결 및 커서 모양 변경
       onClick={onClick}
-      className="group flex w-full cursor-pointer flex-col text-white"
+      className="group flex w-full cursor-pointer flex-col"
     >
-      {/* 1. 이미지 영역: 명세서의 'firstImageUrl' 사용 */}
+      {/* 1. 이미지 영역 (기존 비율 유지) */}
       <div className="relative aspect-[200/120] w-full overflow-hidden rounded-lg bg-[#2A2A2A]">
         {item?.firstImageUrl ? (
           <img
@@ -26,35 +23,31 @@ export default function TimelineCard({ item, onClick }) {
         )}
       </div>
 
-      {/* 2. 텍스트 영역: 명세서의 'title', 'author' 사용 */}
-      <div className="mt-[12px] flex flex-col gap-[4px]">
-        <h4 className="truncate text-[18px] font-semibold text-[#FFFFFF]">
+      {/* 2. 텍스트 영역 (제목, 작성자, 본문) */}
+      <div className="mt-[12px]">
+        <h4 className="truncate text-[18px] font-semibold text-white">
           {item?.title || '제목 없음'}
         </h4>
-        <p className="text-[14px] font-light text-[#AAAAAA]">
+        <p className="mt-[2px] text-[14px] text-[#AAAAAA]">
           {item?.author || '작성자 미상'}
         </p>
-        {/* 명세서의 'content'를 요약해서 보여줌 */}
-        <p className="mt-[4px] line-clamp-2 h-[40px] text-[14px] font-light text-[#AAAAAA]">
-          {item?.content}
+
+        {/* ✅ 본문 미리보기: 이미지 시안처럼 2줄 노출 */}
+        <p className="mt-[8px] line-clamp-2 h-[40px] text-[14px] leading-relaxed font-light text-[#888888]">
+          {item?.content || item?.description || '내용이 없습니다.'}
         </p>
       </div>
 
-      {/* 3. 태그 영역: 배경 #2E2E2E, 글자 #FFFFFF */}
+      {/* 3. 태그 영역 (기존 둥근 디자인) */}
       <div className="mt-[12px] flex flex-wrap gap-[6px]">
         {tagsToShow.map((tag, index) => (
           <span
             key={index}
-            className="flex h-[22px] min-w-[31px] items-center justify-center rounded-full bg-[#2E2E2E] px-[10px] text-[12px] text-[#FFFFFF]"
+            className="rounded-full bg-[#2E2E2E] px-[8px] py-[2px] text-[11px] text-[#FFFFFF]"
           >
-            {tag}
+            #{tag}
           </span>
         ))}
-        {remainingCount > 0 && (
-          <span className="flex h-[22px] min-w-[31px] items-center justify-center rounded-full bg-[#2E2E2E] px-[8px] text-[12px] text-[#FFFFFF]">
-            +{remainingCount}
-          </span>
-        )}
       </div>
     </div>
   );
