@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-// 프로젝트 전역 설정(App.jsx)을 사용하므로 서버 주소 변수는 삭제했습니다.
+// 프로젝트 전역 설정(App.jsx)을 사용하므로 중복된 서버 주소 변수는 제거했습니다.
 const EMAIL_DOMAIN = '@gsm.hs.kr';
 
 const STYLES = {
