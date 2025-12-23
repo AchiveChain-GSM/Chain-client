@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
-const FindPassword = () => {
+const Findps = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');
@@ -31,22 +32,28 @@ const FindPassword = () => {
     boxSizing: 'border-box',
   };
 
-  const handleEmailAuth = () => {
+  const handleEmailAuth = async () => {
     if (!email.endsWith('@gsm.hs.kr')) {
       setErrorMessage(
         'gsm.hs.kr 도메인을 사용하는 계정으로 이메일을 인증해주세요',
       );
       return;
     }
-    setErrorMessage('');
-    alert('인증번호가 발송되었습니다. (테스트 번호: 1234)');
+    try {
+      await axios.post('/api/auth/send-verification', { email });
+      setErrorMessage('');
+      alert('인증번호가 발송되었습니다.');
+    } catch (error) {
+      setErrorMessage('인증번호 발송에 실패했습니다.');
+    }
   };
 
-  const handleVerifyNext = () => {
-    if (authCode === '1234') {
+  const handleVerifyNext = async () => {
+    try {
+      await axios.post('/api/auth/verify-code', { email, code: authCode });
       setErrorMessage('');
       setStep(2);
-    } else {
+    } catch (error) {
       setErrorMessage('인증번호가 일치하지 않습니다');
     }
   };
@@ -58,7 +65,7 @@ const FindPassword = () => {
     return hasLetter && hasNumber && isLongEnough;
   };
 
-  const handleResetComplete = () => {
+  const handleResetComplete = async () => {
     if (!validatePassword(password)) {
       setErrorMessage(
         '영문과 숫자를 포함하여 8자리 이상으로 비밀번호를 만들어주세요',
@@ -69,9 +76,19 @@ const FindPassword = () => {
       setErrorMessage('비밀번호가 일치하지 않습니다');
       return;
     }
-    localStorage.setItem('userPassword', password);
-    alert('비밀번호가 성공적으로 변경되었습니다.');
-    navigate('/login');
+
+    try {
+      await axios.post('/api/auth/change-password', {
+        email: email,
+        password: password,
+      });
+      alert('비밀번호가 성공적으로 변경되었습니다.');
+      navigate('/login');
+    } catch (error) {
+      setErrorMessage(
+        error.response?.data?.message || '비밀번호 변경에 실패했습니다.',
+      );
+    }
   };
 
   return (
@@ -338,4 +355,4 @@ const FindPassword = () => {
   );
 };
 
-export default FindPassword;
+export default Findps;
