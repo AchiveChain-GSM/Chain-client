@@ -19,15 +19,23 @@ export default function RecentPosts() {
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState(FILTERS.DEFAULT);
 
-  const userId = 1;
+  // ✅ 하드코딩 해결: 로컬 스토리지에서 유저 ID를 동적으로 가져옵니다.
+  const userId = localStorage.getItem('userId');
 
   useEffect(() => {
+    // 유저 정보가 없으면 에러를 띄우고 중단합니다.
+    if (!userId) {
+      setError('로그인이 필요한 서비스입니다.');
+      setLoading(false);
+      return;
+    }
+
     const fetchRecentPosts = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // 2. 삼항 연산자로 엔드포인트 간결화
+        // 2. 삼항 연산자로 엔드포인트 간결화 및 동적 userId 적용
         const baseEndpoint = `/api/posts/viewed/${userId}`;
         const endpoint =
           filter !== FILTERS.DEFAULT
@@ -35,6 +43,7 @@ export default function RecentPosts() {
             : baseEndpoint;
 
         const response = await axios.get(endpoint);
+        // 명세서 구조에 맞게 content 추출
         setPosts(response.data.content || []);
       } catch (err) {
         setError('데이터를 불러오는 중 에러가 발생했습니다.');
@@ -51,7 +60,7 @@ export default function RecentPosts() {
     item.title.toLowerCase().includes(keyword.toLowerCase()),
   );
 
-  // 3. 필터 옵션 배열 (즐겨찾기 제외)
+  // 3. 필터 옵션 배열 (즐겨찾기 제외하여 UI 깔끔하게 유지)
   const filterOptions = [
     { id: FILTERS.RECENT, label: '등록 시간' },
     { id: FILTERS.VIEWS, label: '조회수' },
@@ -96,7 +105,7 @@ export default function RecentPosts() {
           </div>
         </div>
 
-        {/* 오른쪽 정렬 사이드바 (즐겨찾기 버튼 제거) */}
+        {/* 오른쪽 정렬 사이드바 (필터 옵션 동적 생성) */}
         <div className="w-[200px] shrink-0 pt-[48px]">
           <div className="flex flex-col gap-6 rounded-xl bg-[#1D1D1D] p-[24px]">
             <div>
