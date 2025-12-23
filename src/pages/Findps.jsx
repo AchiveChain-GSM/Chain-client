@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-const TEMP_SERVER_URL = 'http://localhost:8080'; // 서버의 기본 주소 (나중에 실제 서버 도메인으로 변경하세요)
-const API_BASE_URL = `${TEMP_SERVER_URL}/api/auth`; // 인증 관련 API 공통 경로
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}api/auth`; // .env 파일의 VITE_API_BASE_URL을 사용함
 const EMAIL_DOMAIN = '@gsm.hs.kr';
 
 const STYLES = {
