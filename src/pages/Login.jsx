@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import logo from '../assets/logo/logo-vertical-symbol.svg';
 import checkIcon from '../assets/icon/check.svg';
+
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}api/auth`;
 
 const Login = () => {
   const navigate = useNavigate();
@@ -10,8 +13,20 @@ const Login = () => {
   const [isAutoLogin, setIsAutoLogin] = useState(false);
   const [isError, setIsError] = useState(false);
 
-  const handleLogin = () => {
-    setIsError(true);
+  const handleLogin = async () => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/login`, {
+        email,
+        password,
+      });
+
+      if (response.data) {
+        setIsError(false);
+        navigate('/');
+      }
+    } catch (error) {
+      setIsError(true);
+    }
   };
 
   return (
@@ -56,7 +71,10 @@ const Login = () => {
             type="email"
             placeholder="이메일 입력"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setIsError(false);
+            }}
             style={{
               width: '511px',
               height: '48px',
@@ -75,7 +93,10 @@ const Login = () => {
             type="password"
             placeholder="비밀번호 입력"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setIsError(false);
+            }}
             style={{
               width: '511px',
               height: '48px',
