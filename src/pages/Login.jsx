@@ -4,11 +4,6 @@ import axios from 'axios';
 import logo from '../assets/logo/logo-vertical-symbol.svg';
 import checkIcon from '../assets/icon/check.svg';
 
-const response = await axios.post('/api/auth/login', {
-  email,
-  password,
-});
-
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -18,7 +13,7 @@ const Login = () => {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/login`, {
+      const response = await axios.post('/api/auth/login', {
         email,
         password,
       });
