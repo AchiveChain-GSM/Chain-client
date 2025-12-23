@@ -91,8 +91,8 @@ const Findps = () => {
 
     try {
       await axios.post(`${API_BASE_URL}/change-password`, {
-        email: email,
-        password: password,
+        email,
+        password
       });
       alert('비밀번호가 성공적으로 변경되었습니다.');
       navigate('/login');
