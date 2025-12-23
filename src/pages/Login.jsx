@@ -4,7 +4,10 @@ import axios from 'axios';
 import logo from '../assets/logo/logo-vertical-symbol.svg';
 import checkIcon from '../assets/icon/check.svg';
 
-const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}api/auth`;
+const response = await axios.post('/api/auth/login', {
+  email,
+  password,
+});
 
 const Login = () => {
   const navigate = useNavigate();
