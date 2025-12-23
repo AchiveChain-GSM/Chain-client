@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; // ✅ 1. 이동 도구 추가
 import Layout from '../components/Layout';
 import TimelineCard from '../components/TimelineCard';
 import SearchInput from '../components/Search/SearchInput';
@@ -8,24 +8,29 @@ import FilterIcon from '../assets/icon/filter.svg';
 import axios from 'axios';
 
 export default function Recent() {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // ✅ 2. 이동 함수 선언
   const [keyword, setKeyword] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('recent');
 
+  // 1. 서버에서 데이터 가져오기 (필터가 바뀔 때마다 다시 호출)
   useEffect(() => {
     const fetchRecentData = async () => {
       try {
         setLoading(true);
         const userId = localStorage.getItem('userId');
+
+        // 정렬 기준(filter)을 주소 뒤에 붙여서 호출합니다.
         const response = await axios.get(
           `/api/posts/viewed/${userId}/${filter}`,
         );
+
         const fetchedData = Array.isArray(response.data)
           ? response.data
           : response.data.content || [];
+
         setPosts(fetchedData);
       } catch (err) {
         console.error('최근 본 자료 호출 실패:', err);
@@ -37,6 +42,7 @@ export default function Recent() {
     fetchRecentData();
   }, [filter]);
 
+  // 2. 검색 필터링 로직
   const searchResults = posts.filter((item) =>
     item.title?.toLowerCase().includes(keyword.toLowerCase()),
   );
@@ -48,7 +54,22 @@ export default function Recent() {
       <div className="relative flex h-full px-[24px] pb-[24px]">
         <div className="flex-1 overflow-hidden rounded-xl bg-[#1D1D1D]">
           <div className="custom-scrollbar h-full overflow-y-auto pt-[48px]">
-            {/* 스크롤바 스타일 생략 */}
+            <style jsx>{`
+              .custom-scrollbar::-webkit-scrollbar {
+                width: 10px;
+              }
+              .custom-scrollbar::-webkit-scrollbar-track {
+                background: transparent;
+              }
+              .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: #2b2b2b;
+                border-radius: 10px;
+              }
+              .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                background: #3d3d3d;
+              }
+            `}</style>
+
             <div className="px-[32px]">
               <h2 className="text-[40px] font-bold tracking-tight text-white">
                 최근 본 자료
@@ -90,9 +111,9 @@ export default function Recent() {
                       <TimelineCard
                         key={item.postId}
                         item={item}
-                        // ✅ 수정 포인트: /post/ -> /posts/ 로 경로 변경 및 state 전달
+                        // ✅ 3. 클릭 시 상세 페이지로 이동하며 데이터 전달
                         onClick={() =>
-                          navigate(`/posts/${item.postId}`, {
+                          navigate(`/post/${item.postId}`, {
                             state: { post: item },
                           })
                         }
@@ -106,7 +127,6 @@ export default function Recent() {
           </div>
         </div>
 
-        {/* 필터 모달 로직 동일 */}
         {isModalOpen && (
           <>
             <div

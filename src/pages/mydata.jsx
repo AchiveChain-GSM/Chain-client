@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; // ✅ 1. 이동 도구 추가
 import Layout from '../components/Layout';
 import TimelineCard from '../components/TimelineCard';
 import SearchInput from '../components/Search/SearchInput';
@@ -8,18 +8,19 @@ import FilterIcon from '../assets/icon/filter.svg';
 import axios from 'axios';
 
 export default function MyData() {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // ✅ 2. 이동 함수 선언
   const [keyword, setKeyword] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(null); // ✅ 에러 피드백을 위한 상태 추가
   const [filter, setFilter] = useState('recent');
 
   useEffect(() => {
     const fetchMyPosts = async () => {
-      const userId = localStorage.getItem('userId');
+      const userId = localStorage.getItem('userId'); // 🔑 내 자료 조회를 위해 필수
 
+      // ✅ 코드 리뷰 반영: 로그인이 안 된 경우 예외 처리
       if (!userId) {
         setError('로그인이 필요한 서비스입니다.');
         setLoading(false);
@@ -111,7 +112,7 @@ export default function MyData() {
                 ) : error ? (
                   <div className="py-10 text-center text-red-500">{error}</div>
                 ) : (
-                  <div className="grid grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
+                  <div className="grid max-w-fit grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
                     {filtered.length === 0 ? (
                       <div className="col-span-full mt-[60px] text-center text-zinc-600">
                         자료가 존재하지 않습니다
@@ -121,9 +122,9 @@ export default function MyData() {
                         <TimelineCard
                           key={item.postId}
                           item={item}
-                          // ✅ /post/ -> /posts/ (복수형) 수정 및 데이터 전달
+                          // ✅ 3. 클릭 시 상세 페이지로 이동하며 데이터 전달 추가
                           onClick={() =>
-                            navigate(`/posts/${item.postId}`, {
+                            navigate(`/post/${item.postId}`, {
                               state: { post: item },
                             })
                           }
