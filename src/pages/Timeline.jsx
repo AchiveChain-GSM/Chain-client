@@ -3,35 +3,11 @@ import TimelineCard from '../components/TimelineCard';
 import Calendar from '../components/calendar/calendar';
 import SearchInput from '../components/Search/SearchInput';
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; // ✅ 1. 이동 도구 가져오기
 import axios from 'axios';
 
-// ✅ 더미 데이터 유지
-const DUMMY_POSTS = [
-  {
-    id: 't-1',
-    postId: 't-1',
-    title: '오늘의 리액트 공부 기록',
-    author: '민선',
-    description:
-      '리액트 컴포넌트 구조와 라우팅을 공부했습니다. 가변형 카드 디자인을 적용해보니 화면이 훨씬 꽉 차 보이네요.',
-    tags: ['React', 'TIL'],
-    firstImageUrl: 'https://picsum.photos/400/240?random=11',
-  },
-  {
-    id: 't-2',
-    postId: 't-2',
-    title: '디자인 원복 및 기능 수정',
-    author: '민선',
-    description:
-      '피그마 시안에 맞춰 간격을 158px로 조정하고, 카드 너비를 가변형으로 수정하여 맥북 해상도에 최적화했습니다.',
-    tags: ['UI', 'Fixed'],
-    firstImageUrl: 'https://picsum.photos/400/240?random=12',
-  },
-];
-
 export default function Timeline() {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // ✅ 2. 이동 함수 선언
   const [keyword, setKeyword] = useState('');
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +17,7 @@ export default function Timeline() {
     const fetchTimeline = async () => {
       try {
         setLoading(true);
+
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth() + 1;
         const lastDay = new Date(year, month, 0).getDate();
@@ -54,15 +31,16 @@ export default function Timeline() {
         const fetchedData = Array.isArray(response.data)
           ? response.data
           : response.data.content || [];
-        setPosts(fetchedData.length > 0 ? fetchedData : DUMMY_POSTS);
+
+        setPosts(fetchedData);
       } catch (error) {
-        // 🤖 봇이 제안한 한 줄 추가: 에러 원인 기록
-        console.error('타임라인 데이터 로딩 실패:', error);
-        setPosts(DUMMY_POSTS);
+        console.error('타임라인 로딩 에러:', error);
+        setPosts([]);
       } finally {
         setLoading(false);
       }
     };
+
     fetchTimeline();
   }, [currentDate]);
 
@@ -73,12 +51,30 @@ export default function Timeline() {
   return (
     <Layout>
       <div className="flex h-full gap-[24px] px-[24px] pb-[24px]">
+        {/* 캘린더 영역 */}
         <div className="scrollbar-hide w-[390px] shrink-0 overflow-y-auto">
           <Calendar onDateChange={(date) => setCurrentDate(date)} />
         </div>
 
+        {/* 콘텐츠 영역 */}
         <div className="flex-1 overflow-hidden rounded-xl bg-[#1D1D1D]">
           <div className="custom-scrollbar h-full overflow-y-auto px-[32px] pt-[48px]">
+            <style jsx>{`
+              .custom-scrollbar::-webkit-scrollbar {
+                width: 10px;
+              }
+              .custom-scrollbar::-webkit-scrollbar-track {
+                background: transparent;
+              }
+              .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: #2b2b2b;
+                border-radius: 10px;
+              }
+              .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                background: #3d3d3d;
+              }
+            `}</style>
+
             <h2 className="text-[40px] font-bold tracking-tight text-white">
               {currentDate.getMonth() + 1}월
             </h2>
@@ -100,19 +96,27 @@ export default function Timeline() {
                     </h3>
                   )}
 
-                  <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
+                  <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                     {(keyword ? searchResults : posts).map((item) => (
                       <TimelineCard
-                        key={item.id || item.postId}
+                        key={item.postId}
                         item={item}
+                        // ✅ 3. 클릭 시 상세 페이지로 이동하며 데이터 전달
                         onClick={() =>
-                          navigate(`/posts/${item.id || item.postId}`, {
+                          navigate(`/post/${item.postId}`, {
                             state: { post: item },
                           })
                         }
                       />
                     ))}
                   </div>
+
+                  {!loading &&
+                    (keyword ? searchResults : posts).length === 0 && (
+                      <div className="mt-[60px] text-center text-zinc-600">
+                        자료가 존재하지 않습니다.
+                      </div>
+                    )}
                 </div>
               )}
             </div>

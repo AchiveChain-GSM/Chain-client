@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; // ✅ 추가
 import Layout from '../components/Layout';
 import TimelineCard from '../components/TimelineCard';
 import SearchInput from '../components/Search/SearchInput';
@@ -13,7 +13,7 @@ const FILTERS = {
 };
 
 export default function RecentPosts() {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // ✅ 추가
   const [keyword, setKeyword] = useState('');
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +51,7 @@ export default function RecentPosts() {
   }, [filter, userId]);
 
   const searchResults = posts.filter((item) =>
-    item.title?.toLowerCase().includes(keyword.toLowerCase()),
+    item.title.toLowerCase().includes(keyword.toLowerCase()),
   );
 
   const filterOptions = [
@@ -79,29 +79,24 @@ export default function RecentPosts() {
                   {error}
                 </div>
               ) : (
-                <div className="mt-[12px]">
-                  <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                    {(keyword ? searchResults : posts).map((item) => (
-                      <TimelineCard
-                        key={item.postId}
-                        item={item}
-                        // ✅ 경로를 /posts/ 로 맞추고 클릭 시 데이터를 넘겨줍니다.
-                        onClick={() =>
-                          navigate(`/posts/${item.postId}`, {
-                            state: { post: item },
-                          })
-                        }
-                      />
-                    ))}
-                  </div>
+                <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                  {(keyword ? searchResults : posts).map((item) => (
+                    <TimelineCard
+                      key={item.postId}
+                      item={item}
+                      // ✅ 클릭 기능 추가
+                      onClick={() =>
+                        navigate(`/post/${item.postId}`, {
+                          state: { post: item },
+                        })
+                      }
+                    />
+                  ))}
                 </div>
               )}
             </div>
-            <div className="h-[80px]" />
           </div>
         </div>
-
-        {/* 오른쪽 정렬 사이드바 */}
         <div className="w-[200px] shrink-0 pt-[48px]">
           <div className="flex flex-col gap-6 rounded-xl bg-[#1D1D1D] p-[24px]">
             <p className="mb-4 flex items-center gap-2 font-bold text-white">
