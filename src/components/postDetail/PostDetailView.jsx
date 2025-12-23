@@ -1,101 +1,55 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import '../upload/EditorStyle.css';
 
 import PostHeader from './PostHeader';
-import PostBody from './PostBody.jsx';
+import PostBody from './PostBody';
 import PostFiles from './PostFiles';
 import PostComments from './PostComments';
 import ReportModal from './ReportModal';
 
-const examplePost = {
-  postId: 'post-001',
-  title: '예시 글 제목입니다',
-  content: '<p>이건 <strong>예시 본문</strong>입니다.</p>',
-  tags: ['React', 'Frontend'],
-  author: {
-    userId: 'user-001',
-    name: '김유찬',
-  },
-  likeCount: 3,
-  bookmarkCount: 1,
-  viewCount: 42,
-  isLiked: false,
-  isBookmarked: false,
-  createdAt: new Date().toISOString(),
-  files: [
-    {
-      fileId: 'file-001',
-      originalName: 'example.pdf',
-      url: 'https://example.com/example.pdf',
-      size: 12345,
-      mimeType: 'application/pdf',
+import {
+  getPost,
+  getPostComments,
+  createPostComment,
+  deletePost,
+} from '../../api/posts';
+
+// ⚠️ 만약 api/reactions 파일이 없다면 이 부분은 ../../api/posts 로 수정하세요.
+import { togglePostLike, togglePostBookmark } from '../../api/reactions';
+
+function normalizeComment(res, postId) {
+  return {
+    commentId: res.commentId ?? res.id,
+    postId,
+    user: {
+      userId: res.userId ?? res.user?.userId ?? null,
+      name: res.userName ?? res.user?.name ?? '',
     },
-  ],
-  comments: [
-    {
-      commentId: 'c-001',
-      postId: 'post-001',
-      user: { userId: 'user-002', name: '댓글러' },
-      content: '댓글 예시입니다',
-      createdAt: new Date().toISOString(),
-    },
-  ],
-};
+    content: res.content ?? '',
+    createdAt: res.createAt ?? res.createdAt ?? res.created_at ?? null,
+  };
+}
 
 function normalizePost(raw, routeId) {
-  const createdAt = raw?.createdAt || raw?.createAt || new Date().toISOString();
-
-  const author =
-    raw?.author && typeof raw.author === 'object'
-      ? {
-          userId: raw.author.userId ?? raw.author.id ?? null,
-          name: raw.author.name ?? '작성자',
-        }
-      : { userId: raw?.authorId ?? null, name: raw?.author ?? '작성자' };
-
   return {
-    postId: raw?.postId ?? raw?.id ?? routeId,
-    title: raw?.title ?? '제목(더미)',
-    content: raw?.content ?? '<p>내용(더미)</p>',
-    tags: Array.isArray(raw?.tags) ? raw.tags : [],
-
-    author,
-
-    likeCount: raw?.likeCount ?? raw?.likes ?? 0,
-    bookmarkCount: raw?.bookmarkCount ?? raw?.bookmarks ?? 0,
-    viewCount: raw?.viewCount ?? raw?.views ?? 0,
-
+    postId: raw?.id ?? raw?.postId ?? routeId,
+    title: raw?.title ?? '',
+    content: raw?.content ?? '',
+    tags: raw?.tags ?? [],
+    author:
+      typeof raw?.author === 'string'
+        ? { userId: null, name: raw.author }
+        : (raw?.author ?? { userId: null, name: '' }),
+    likeCount: raw?.likes ?? raw?.likeCount ?? 0,
+    bookmarkCount: raw?.bookmarks ?? raw?.bookmarkCount ?? 0,
+    viewCount: raw?.views ?? raw?.viewCount ?? 0,
     isLiked: raw?.isLiked ?? false,
     isBookmarked: raw?.isBookmarked ?? false,
-
-    createdAt,
-    updatedAt: raw?.updatedAt ?? raw?.updateAt ?? null,
-
-    files: (raw?.files ?? []).map((f) => ({
-      fileId: f?.fileId ?? f?.id ?? null,
-      originalName: f?.originalName ?? f?.name ?? '첨부파일',
-      size: f?.size ?? 0,
-      mimeType: f?.mimeType ?? f?.type ?? '',
-      url: f?.url ?? null,
-      file: f?.file instanceof File ? f.file : null, // 로컬 파일 fallback
-    })),
-
-    comments: (raw?.comments ?? []).map((c) => ({
-      commentId: c?.commentId ?? c?.id ?? null,
-      postId: c?.postId ?? raw?.postId ?? raw?.id ?? routeId,
-      user:
-        c?.user && typeof c.user === 'object'
-          ? {
-              userId: c.user.userId ?? c.user.id ?? null,
-              name: c.user.name ?? '익명',
-            }
-          : { userId: c?.userId ?? null, name: c?.author ?? '익명' },
-      content: c?.content ?? '',
-      createdAt: c?.createdAt ?? c?.createAt ?? null,
-      updatedAt: c?.updatedAt ?? null,
-    })),
+    createdAt: raw?.createAt ?? raw?.createdAt ?? null,
+    files: raw?.files ?? [],
+    comments: [],
   };
 }
 
@@ -103,145 +57,242 @@ export default function PostDetailView({ initialPost }) {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // TODO(연동 시): 인증에서 받아오면 됩니다.
+  // TODO: 실제 로그인 유저로 교체 (Context 등 활용 권장)
   const currentUser = { userId: 'me-001', name: '김유찬' };
+
+  const [postData, setPostData] = useState(null);
+  const [error, setError] = useState(null); // ✅ 에러 상태 추가
+
+  const [commentInput, setCommentInput] = useState('');
+  const [commentPending, setCommentPending] = useState(false);
+  const [likePending, setLikePending] = useState(false);
+  const [bookmarkPending, setBookmarkPending] = useState(false);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [commentInput, setCommentInput] = useState('');
 
-  /**
-   * 여기서 “예시 데이터가 언제 쓰일지” 결정합니다.
-   * 우선순위:
-   * 1) initialPost (목록에서 state로 넘긴 데이터)
-   * 2) examplePost (퍼블리싱 확인용)
-   * 3) null (없으면 더미 텍스트)
-   */
-  const seedPost = useMemo(() => {
-    return initialPost ?? examplePost ?? null;
-  }, [initialPost]);
+  const isOwner = useMemo(() => {
+    if (!postData) return false;
 
-  const [postData, setPostData] = useState(() => normalizePost(seedPost, id));
+    const authorId = postData.author?.userId;
+    const myId = currentUser?.userId;
 
-  useEffect(() => {
-    setPostData(normalizePost(seedPost, id));
-  }, [seedPost, id]);
+    if (authorId && myId) return authorId === myId;
 
-  const [, forceTick] = useState(0);
-  useEffect(() => {
-    const intervalId = setInterval(() => forceTick((t) => t + 1), 60 * 1000);
-    return () => clearInterval(intervalId);
+    const authorName = postData.author?.name ?? '';
+    const myName = currentUser?.name ?? '';
+    return authorName && myName ? authorName === myName : false;
+  }, [postData, currentUser]);
+
+  // ✅ 파일 다운로드 핸들러 개선 (a 태그 사용)
+  const handleDownload = useCallback((file) => {
+    const url =
+      typeof file === 'string'
+        ? file
+        : (file?.url ?? file?.fileUrl ?? file?.downloadUrl ?? file?.path);
+
+    if (!url) {
+      alert('다운로드 URL이 없습니다.');
+      return;
+    }
+
+    // 가상 링크 생성하여 다운로드 시도
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.download = file.name || 'download';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }, []);
 
-  
+  // ✅ 게시글 조회
   useEffect(() => {
-    // TODO(연동 시):
-    // - 여기서 GET /posts/:id 호출
-    // - 응답을 normalizePost로 변환해서 setPostData 하면 끝입니다.
-    // 예)
-    // const data = await fetch(...)
-    // setPostData(normalizePost(data, id));
+    let alive = true;
+    setError(null); // ID 변경 시 에러 초기화
+
+    // 초기 데이터가 있으면 먼저 설정 (UX 최적화)
+    if (initialPost && String(initialPost.id) === String(id)) {
+      setPostData(normalizePost(initialPost, id));
+    }
+
+    getPost(id)
+      .then((res) => {
+        if (!alive) return;
+        const body = res?.data ?? res;
+        setPostData((prev) => ({
+          ...normalizePost(body, id),
+          comments: prev?.comments || [],
+        }));
+      })
+      .catch((err) => {
+        if (!alive) return;
+        console.error(err);
+        setError('게시글을 불러올 수 없습니다.'); // 에러 상태 업데이트
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [id, initialPost]);
+
+  // ✅ 댓글 조회
+  const fetchComments = useCallback(async () => {
+    try {
+      const res = await getPostComments(id);
+      const list = res?.data ?? res ?? [];
+
+      setPostData((prev) => {
+        // 게시글 데이터가 없으면 댓글을 넣을 수 없으므로 방어
+        if (!prev) return prev;
+        return {
+          ...prev,
+          comments: list.map((c) => normalizeComment(c, Number(id))),
+        };
+      });
+    } catch (e) {
+      console.error('댓글 로딩 실패', e);
+    }
   }, [id]);
 
-  const isOwner =
-    postData.author?.userId && currentUser?.userId
-      ? postData.author.userId === currentUser.userId
-      : postData.author?.name === currentUser?.name;
-
-  const handleDownload = (file) => {
-    // 1) 로컬 File
-    if (file?.file instanceof File) {
-      const url = URL.createObjectURL(file.file);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = file.originalName || 'download';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      return;
-    }
-
-    // 2) 서버 url
-    if (file?.url) {
-      window.open(file.url, '_blank', 'noopener,noreferrer');
-      return;
-    }
-
-    alert('다운로드 링크가 없습니다. (API 연동 후 url/fileId로 처리)');
-  };
-
-  const handleToggleLike = () => {
-    // TODO(연동 시): optimistic update + 실패 시 원복 / 서버 응답으로 count 동기화
-    setPostData((prev) => ({
-      ...prev,
-      likeCount: prev.isLiked
-        ? Math.max(0, prev.likeCount - 1)
-        : prev.likeCount + 1,
-      isLiked: !prev.isLiked,
-    }));
-  };
-
-  const handleToggleBookmark = () => {
-    // TODO(연동 시): optimistic update + 실패 시 원복 / 서버 응답으로 count 동기화
-    setPostData((prev) => ({
-      ...prev,
-      bookmarkCount: prev.isBookmarked
-        ? Math.max(0, prev.bookmarkCount - 1)
-        : prev.bookmarkCount + 1,
-      isBookmarked: !prev.isBookmarked,
-    }));
-  };
-
-  const handleSubmitComment = () => {
-    if (!commentInput.trim()) return;
-
-    // TODO(연동 시): POST /posts/:id/comments 후 서버가 준 commentId/createdAt로 갱신
-    const newComment = {
-      commentId: `temp-${Date.now()}`,
-      postId: postData.postId,
-      user: { userId: currentUser.userId, name: currentUser.name },
-      content: commentInput.trim(),
-      createdAt: new Date().toISOString(),
-      updatedAt: null,
-    };
-
-    setPostData((prev) => ({
-      ...prev,
-      comments: [...(prev.comments || []), newComment],
-    }));
-    setCommentInput('');
-  };
-
-  const openReportModal = () => {
-    setIsReportModalOpen(true);
-    setIsMenuOpen(false);
-  };
-
-  const handleDelete = () => {
-    // TODO(연동 시): DELETE /posts/:id
-    alert('삭제되었습니다. (API 연동 후 실제 삭제로 교체)');
-    navigate('/');
-  };
-
- 
+  // 게시글 로딩 완료 시 댓글 가져오기
   useEffect(() => {
-    console.log('📦 seedPost:', seedPost);
-    console.log('📦 postData:', postData);
-  }, [seedPost, postData]);
+    if (postData?.postId) {
+      fetchComments();
+    }
+  }, [fetchComments, postData?.postId]);
+
+  // 댓글 작성
+  const handleSubmitComment = async () => {
+    if (commentPending || !commentInput.trim()) return;
+
+    setCommentPending(true);
+    try {
+      await createPostComment(id, commentInput);
+      setCommentInput('');
+      await fetchComments();
+    } catch {
+      alert('댓글 작성에 실패했습니다.');
+    } finally {
+      setCommentPending(false);
+    }
+  };
+
+  // 좋아요
+  const handleToggleLike = async () => {
+    if (likePending) return;
+
+    setLikePending(true);
+    try {
+      await togglePostLike(id);
+      setPostData((p) => {
+        if (!p) return p;
+        const nextLiked = !p.isLiked;
+        return {
+          ...p,
+          isLiked: nextLiked,
+          likeCount: nextLiked ? p.likeCount + 1 : Math.max(0, p.likeCount - 1),
+        };
+      });
+    } catch (e) {
+      console.error(e);
+      alert('좋아요 처리 실패');
+    } finally {
+      setLikePending(false);
+    }
+  };
+
+  // 북마크
+  const handleToggleBookmark = async () => {
+    if (bookmarkPending) return;
+
+    setBookmarkPending(true);
+    try {
+      await togglePostBookmark(id);
+      setPostData((p) => {
+        if (!p) return p;
+        const nextBookmarked = !p.isBookmarked;
+        return {
+          ...p,
+          isBookmarked: nextBookmarked,
+          bookmarkCount: nextBookmarked
+            ? p.bookmarkCount + 1
+            : Math.max(0, p.bookmarkCount - 1),
+        };
+      });
+    } catch (e) {
+      console.error(e);
+      alert('북마크 처리 실패');
+    } finally {
+      setBookmarkPending(false);
+    }
+  };
+
+  // 수정
+  const handleEdit = () => {
+    setIsMenuOpen(false);
+    navigate(`/posts/${id}/edit`);
+  };
+
+  // 삭제
+  const handleDelete = async () => {
+    setIsMenuOpen(false);
+
+    const ok = window.confirm('정말 삭제하시겠습니까?');
+    if (!ok) return;
+
+    try {
+      await deletePost(id);
+      alert('삭제되었습니다.');
+      navigate('/');
+    } catch (e) {
+      console.error(e);
+      alert('삭제에 실패했습니다.');
+    }
+  };
+
+  // 신고 열기
+  const handleOpenReport = () => {
+    setIsMenuOpen(false);
+    setIsReportModalOpen(true);
+  };
+
+  // ⚠️ 에러 발생 시 UI
+  if (error) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-4 text-zinc-400">
+        <p>{error}</p>
+        <button
+          onClick={() => navigate(-1)}
+          className="rounded bg-zinc-700 px-4 py-2 text-white hover:bg-zinc-600"
+        >
+          뒤로 가기
+        </button>
+      </div>
+    );
+  }
+
+  // 로딩 중 UI
+  if (!postData) {
+    return (
+      <div className="flex h-full items-center justify-center text-zinc-400">
+        게시글을 불러오는 중입니다...
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-bg flex h-full flex-col overflow-hidden rounded-tl-lg p-4 pb-0 text-white">
-      <main className="custom-scrollbar m-6 mr-1 overflow-y-auto pr-6">
+    <div className="bg-bg flex h-full flex-col p-4 text-white">
+      <main className="m-6 overflow-y-auto pr-6">
         <PostHeader
           postData={postData}
           isOwner={isOwner}
           isMenuOpen={isMenuOpen}
           setIsMenuOpen={setIsMenuOpen}
           onBack={() => navigate(-1)}
-          onEdit={() => navigate('/upload', { state: { post: postData } })}
+          onEdit={handleEdit}
           onDelete={handleDelete}
-          onReport={openReportModal}
+          onReport={handleOpenReport}
           currentUser={currentUser}
         />
 
@@ -249,6 +300,8 @@ export default function PostDetailView({ initialPost }) {
           postData={postData}
           onToggleLike={handleToggleLike}
           onToggleBookmark={handleToggleBookmark}
+          likePending={likePending}
+          bookmarkPending={bookmarkPending}
         />
 
         <PostFiles files={postData.files} onDownload={handleDownload} />
@@ -259,6 +312,7 @@ export default function PostDetailView({ initialPost }) {
           setCommentInput={setCommentInput}
           onSubmit={handleSubmitComment}
           currentUser={currentUser}
+          commentPending={commentPending}
         />
       </main>
 

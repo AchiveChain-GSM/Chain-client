@@ -11,6 +11,7 @@ import MyData from './pages/mydata';
 import UploadPage from './pages/Upload';
 import FindPassword from './pages/Findps';
 import PostDetail from './pages/PostDetail';
+import PostEdit from './components/postDetail/PostEditView';
 
 // ✅ axios 전역 주소 설정 (.env에 넣은 주소를 가져옵니다)
 axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
@@ -34,9 +35,9 @@ const AppContent = () => {
         <Route path="/bookmark" element={<Bookmark />} />
         <Route path="/mydata" element={<MyData />} />
         <Route path="/upload" element={<UploadPage />} />
+        <Route path="/posts/:id" element={<PostDetail />} />
 
-        {/* ✅ 수정 포인트: path를 /post/로, 파라미터 이름을 :postId로 맞췄습니다. */}
-        <Route path="/post/:postId" element={<PostDetail />} />
+        <Route path="/posts/:id/edit" element={<PostEdit />} />
       </Routes>
     </div>
   );

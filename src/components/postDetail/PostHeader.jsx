@@ -1,3 +1,4 @@
+// src/components/postDetail/PostHeader.jsx
 import peopleShape from '../../assets/peopleShape.svg';
 import beforeIcon from '../../assets/uploadIcon/before.svg';
 import detailIcon from '../../assets/icon/detail.svg';
@@ -10,8 +11,9 @@ import { getTimeAgo, formatKoreanDate } from './timeAgo';
 export default function PostHeader({
   postData,
   isOwner,
-  isMenuOpen,
-  setIsMenuOpen,
+  // ✅ 안전하게 기본값 처리 (부모에서 실수해도 터지지 않게)
+  isMenuOpen = false,
+  setIsMenuOpen = () => {},
   onBack,
   onEdit,
   onDelete,
@@ -19,15 +21,19 @@ export default function PostHeader({
   currentUser,
 }) {
   const authorName = postData.author?.name ?? '작성자';
-  const isMe = postData.author?.userId && currentUser?.userId
-    ? postData.author.userId === currentUser.userId
-    : authorName === (currentUser?.name ?? '');
+
+  const isMe =
+    (postData.author?.userId &&
+      currentUser?.userId &&
+      postData.author.userId === currentUser.userId) ||
+    authorName === (currentUser?.name ?? '');
 
   return (
     <>
       <button
         onClick={onBack}
         className="mb-6 flex items-center gap-2 text-sm text-zinc-400 transition-colors hover:text-white"
+        type="button"
       >
         <img src={beforeIcon} alt="뒤로가기" className="h-4 w-4 opacity-60" />
         <span>이전으로</span>
