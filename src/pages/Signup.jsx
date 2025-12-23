@@ -97,14 +97,23 @@ const Signup = () => {
   };
 
   const handleComplete = async () => {
+    const genNum = Number(generation);
+    const classNum = Number(userClass);
+    const admissionNum = Number(userNumber);
+
+    if (isNaN(genNum) || isNaN(classNum) || isNaN(admissionNum)) {
+      setErrorMessage('기수, 반, 번호에는 숫자만 입력해주세요.');
+      return;
+    }
+
     try {
       await axios.post('/api/auth/sign-up', {
         email,
         password,
         name: userName,
-        generation: Number(generation),
-        classNumber: Number(userClass),
-        admissionNumber: Number(userNumber),
+        generation: genNum,
+        classNumber: classNum,
+        admissionNumber: admissionNum,
       });
       alert('회원가입이 완료되었습니다!');
       navigate('/login');
@@ -117,10 +126,18 @@ const Signup = () => {
   };
 
   const isStep4Valid =
-    userName !== '' &&
-    generation !== '' &&
-    userClass !== '' &&
-    userNumber !== '';
+    userName.trim() !== '' &&
+    generation.trim() !== '' &&
+    userClass.trim() !== '' &&
+    userNumber.trim() !== '';
+
+  const handleNumberChange = (setter) => (e) => {
+    const value = e.target.value;
+    if (value === '' || /^[0-9]+$/.test(value)) {
+      setter(value);
+      setErrorMessage('');
+    }
+  };
 
   return (
     <div
@@ -536,7 +553,7 @@ const Signup = () => {
           <div
             style={{
               width: '559px',
-              height: '268px',
+              height: '308px',
               backgroundColor: '#1D1D1D',
               borderRadius: '12px',
               padding: '24px',
@@ -567,24 +584,44 @@ const Signup = () => {
                   type="text"
                   placeholder="기수"
                   value={generation}
-                  onChange={(e) => setGeneration(e.target.value)}
+                  onChange={handleNumberChange(setGeneration)}
                   style={{ ...commonInputStyle, width: '162.33px' }}
                 />
                 <input
                   type="text"
                   placeholder="반"
                   value={userClass}
-                  onChange={(e) => setUserClass(e.target.value)}
+                  onChange={handleNumberChange(setUserClass)}
                   style={{ ...commonInputStyle, width: '162.33px' }}
                 />
                 <input
                   type="text"
                   placeholder="번호"
                   value={userNumber}
-                  onChange={(e) => setUserNumber(e.target.value)}
+                  onChange={handleNumberChange(setUserNumber)}
                   style={{ ...commonInputStyle, width: '162.33px' }}
                 />
               </div>
+            </div>
+            <div
+              style={{
+                width: '511px',
+                height: '20px',
+                marginTop: '10px',
+                textAlign: 'right',
+              }}
+            >
+              {errorMessage && (
+                <span
+                  style={{
+                    color: '#FF5050',
+                    fontSize: '14px',
+                    fontFamily: 'Pretendard',
+                  }}
+                >
+                  {errorMessage}
+                </span>
+              )}
             </div>
             <div
               style={{
