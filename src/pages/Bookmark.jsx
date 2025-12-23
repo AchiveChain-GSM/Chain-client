@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // ✅ 1. 이동 도구 추가
+import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import TimelineCard from '../components/TimelineCard';
 import SearchInput from '../components/Search/SearchInput';
@@ -15,7 +15,7 @@ const BOOKMARK_FILTERS = {
 };
 
 export default function Bookmark() {
-  const navigate = useNavigate(); // ✅ 2. 이동 함수 선언
+  const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [posts, setPosts] = useState([]);
@@ -24,10 +24,25 @@ export default function Bookmark() {
 
   useEffect(() => {
     const fetchBookmarks = async () => {
+      // ✅ 1. 코드 리뷰 반영: 사용자 식별자(userId) 가져오기
+      const userId = localStorage.getItem('userId');
+
+      // ✅ 2. 코드 리뷰 반영: 로그인이 안 된 경우 처리
+      if (!userId) {
+        console.error('즐겨찾기 목록을 불러오려면 로그인이 필요합니다.');
+        setPosts([]);
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         const filterPath = BOOKMARK_FILTERS[filter] || '';
-        const response = await axios.get(`/api/posts/bookmarked/${filterPath}`);
+
+        // ✅ 3. 코드 리뷰 반영: API 경로에 userId 포함
+        const response = await axios.get(
+          `/api/posts/bookmarked/${userId}/${filterPath}`,
+        );
 
         const fetchedData = Array.isArray(response.data)
           ? response.data
@@ -116,7 +131,6 @@ export default function Bookmark() {
                         <TimelineCard
                           key={item.postId}
                           item={item}
-                          // ✅ 3. 클릭 시 상세 페이지로 이동하며 데이터 전달
                           onClick={() =>
                             navigate(`/post/${item.postId}`, {
                               state: { post: item },
