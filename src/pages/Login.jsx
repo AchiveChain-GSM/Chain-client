@@ -20,7 +20,13 @@ const Login = () => {
         password,
       });
 
-      if (response.data) {
+      if (response.data && response.data.accessToken) {
+        localStorage.setItem('accessToken', response.data.accessToken);
+
+        if (response.data.refreshToken) {
+          localStorage.setItem('refreshToken', response.data.refreshToken);
+        }
+
         setIsError(false);
         navigate('/');
       }
