@@ -7,7 +7,13 @@ import FilterModal from '../components/FilterModal';
 import FilterIcon from '../assets/icon/filter.svg';
 import axios from 'axios';
 
-// ✅ 상세 페이지 연결을 위해 본문(description) 데이터를 보강한 임시 데이터
+// 🤖 봇 제안 반영: 필터 타입을 상수로 관리 (오타 방지 및 유지보수용)
+const FILTERS = {
+  RECENT: 'recent',
+  POPULAR: 'popular',
+  VIEWS: 'most-view',
+};
+
 const DUMMY_POSTS = [
   {
     postId: '1',
@@ -62,7 +68,9 @@ export default function Search() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [posts, setPosts] = useState(DUMMY_POSTS);
   const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState('recent');
+
+  // ✅ 봇 제안 반영: 문자열 'recent' 대신 FILTERS.RECENT 사용
+  const [filter, setFilter] = useState(FILTERS.RECENT);
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -130,7 +138,6 @@ export default function Search() {
                     <BaseCard
                       key={item.postId}
                       item={item}
-                      // ✅ /post/ -> /posts/ 로 경로 수정 완료 (App.jsx 라우트와 일치)
                       onClick={() =>
                         navigate(`/posts/${item.postId}`, {
                           state: { post: item },

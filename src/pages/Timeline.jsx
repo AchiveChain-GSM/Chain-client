@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-// ✅ id와 postId를 둘 다 넣어 데이터 충돌을 방지합니다.
+// ✅ 더미 데이터 유지
 const DUMMY_POSTS = [
   {
     id: 't-1',
@@ -56,6 +56,8 @@ export default function Timeline() {
           : response.data.content || [];
         setPosts(fetchedData.length > 0 ? fetchedData : DUMMY_POSTS);
       } catch (error) {
+        // 🤖 봇이 제안한 한 줄 추가: 에러 원인 기록
+        console.error('타임라인 데이터 로딩 실패:', error);
         setPosts(DUMMY_POSTS);
       } finally {
         setLoading(false);
@@ -98,13 +100,11 @@ export default function Timeline() {
                     </h3>
                   )}
 
-                  {/* ✅ xl:4개, 2xl:5개로 설정하여 카드 크기를 작고 이쁘게 유지 */}
                   <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
                     {(keyword ? searchResults : posts).map((item) => (
                       <TimelineCard
                         key={item.id || item.postId}
                         item={item}
-                        // ✅ App.jsx의 /posts/:id 와 정확히 일치시킴
                         onClick={() =>
                           navigate(`/posts/${item.id || item.postId}`, {
                             state: { post: item },
