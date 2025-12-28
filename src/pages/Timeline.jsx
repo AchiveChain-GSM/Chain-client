@@ -3,11 +3,11 @@ import TimelineCard from '../components/TimelineCard';
 import Calendar from '../components/calendar/calendar';
 import SearchInput from '../components/Search/SearchInput';
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // ✅ 1. 이동 도구 가져오기
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 export default function Timeline() {
-  const navigate = useNavigate(); // ✅ 2. 이동 함수 선언
+  const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,14 +51,23 @@ export default function Timeline() {
   return (
     <Layout>
       <div className="flex h-full gap-[24px] px-[24px] pb-[24px]">
-        {/* 캘린더 영역 */}
-        <div className="scrollbar-hide w-[390px] shrink-0 overflow-y-auto">
-          <Calendar onDateChange={(date) => setCurrentDate(date)} />
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+          @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+          * { font-family: 'Pretendard', sans-serif !important; }
+        `,
+          }}
+        />
+
+        <div className="scrollbar-hide w-[390px] shrink-0 overflow-y-auto rounded-xl bg-[#1D1D1D]">
+          <div style={{ marginTop: '-12px' }}>
+            <Calendar onDateChange={(date) => setCurrentDate(date)} />
+          </div>
         </div>
 
-        {/* 콘텐츠 영역 */}
         <div className="flex-1 overflow-hidden rounded-xl bg-[#1D1D1D]">
-          <div className="custom-scrollbar h-full overflow-y-auto px-[32px] pt-[48px]">
+          <div className="custom-scrollbar h-full overflow-y-auto">
             <style jsx>{`
               .custom-scrollbar::-webkit-scrollbar {
                 width: 10px;
@@ -75,23 +84,47 @@ export default function Timeline() {
               }
             `}</style>
 
-            <h2 className="text-[40px] font-bold tracking-tight text-white">
-              {currentDate.getMonth() + 1}월
-            </h2>
+            <div style={{ padding: '24px 0 0 24px' }}>
+              <h2
+                style={{
+                  fontSize: '42px',
+                  fontWeight: '600',
+                  color: 'white',
+                  margin: 0,
+                  lineHeight: '1',
+                }}
+              >
+                {currentDate.getMonth() + 1}월
+              </h2>
 
-            <div className="mt-[36px]">
-              <SearchInput onSearch={(kw) => setKeyword(kw)} />
+              <div style={{ marginTop: '36px', paddingRight: '24px' }}>
+                <SearchInput onSearch={(kw) => setKeyword(kw)} />
+              </div>
             </div>
 
-            <div className="mt-[36px] flex flex-col">
+            <div className="flex flex-col px-[24px] pt-[36px]">
               {loading ? (
-                <div className="mt-[60px] text-center text-[14px] text-zinc-500">
+                <div
+                  style={{
+                    marginTop: '60px',
+                    textAlign: 'center',
+                    fontSize: '14px',
+                    color: '#71717a',
+                  }}
+                >
                   데이터를 불러오는 중...
                 </div>
               ) : (
                 <div className="mt-[12px]">
                   {keyword && (
-                    <h3 className="mb-[36px] text-[24px] font-semibold text-white">
+                    <h3
+                      style={{
+                        marginBottom: '36px',
+                        fontSize: '24px',
+                        fontWeight: '600',
+                        color: 'white',
+                      }}
+                    >
                       “{keyword}” 검색결과
                     </h3>
                   )}
@@ -101,7 +134,6 @@ export default function Timeline() {
                       <TimelineCard
                         key={item.postId}
                         item={item}
-                        // ✅ 3. 클릭 시 상세 페이지로 이동하며 데이터 전달
                         onClick={() =>
                           navigate(`/post/${item.postId}`, {
                             state: { post: item },
@@ -113,7 +145,13 @@ export default function Timeline() {
 
                   {!loading &&
                     (keyword ? searchResults : posts).length === 0 && (
-                      <div className="mt-[60px] text-center text-zinc-600">
+                      <div
+                        style={{
+                          marginTop: '60px',
+                          textAlign: 'center',
+                          color: '#52525b',
+                        }}
+                      >
                         자료가 존재하지 않습니다.
                       </div>
                     )}
