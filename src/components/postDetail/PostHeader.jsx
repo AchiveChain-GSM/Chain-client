@@ -10,23 +10,44 @@ import { getTimeAgo, formatKoreanDate } from './timeAgo';
 
 export default function PostHeader({
   postData,
-  isOwner,
-  // ✅ 안전하게 기본값 처리 (부모에서 실수해도 터지지 않게)
+  isOwner: isOwnerProp = false,
   isMenuOpen = false,
   setIsMenuOpen = () => {},
-  onBack,
-  onEdit,
-  onDelete,
-  onReport,
+  onBack = () => {},
+  onEdit = () => {},
+  onDelete = () => {},
+  onReport = () => {},
   currentUser,
 }) {
-  const authorName = postData.author?.name ?? '작성자';
+  const authorName = postData?.author?.name ?? postData?.authorName ?? '작성자';
 
+  // ✅ 작성자 식별값(백 응답 구조 방어)
+  const authorId =
+    postData?.author?.userId ??
+    postData?.authorId ??
+    postData?.author?.id ??
+    null;
+
+  const authorEmail = postData?.author?.email ?? postData?.authorEmail ?? null;
+
+  const currentId = currentUser?.userId ?? currentUser?.id ?? null;
+  const currentEmail = currentUser?.email ?? currentUser?.sub ?? null;
+
+  // ✅ 타입/구조 차이 방어해서 "내 글" 판별
   const isMe =
-    (postData.author?.userId &&
-      currentUser?.userId &&
-      postData.author.userId === currentUser.userId) ||
-    authorName === (currentUser?.name ?? '');
+    (authorId != null &&
+      currentId != null &&
+      String(authorId) === String(currentId)) ||
+    (authorEmail &&
+      currentEmail &&
+      String(authorEmail).toLowerCase() === String(currentEmail).toLowerCase());
+
+  // ✅ 부모에서 isOwner를 잘못 내려줘도, 여기서 보정
+  const isOwner = Boolean(isOwnerProp || isMe);
+
+  // ✅ createdAt/createAt 둘 다 방어
+  const createdAt =
+    postData?.createdAt ?? postData?.createAt ?? postData?.create_at ?? null;
 
   return (
     <>
@@ -40,7 +61,9 @@ export default function PostHeader({
       </button>
 
       <div className="flex items-start justify-between">
-        <h1 className="mb-4 text-[40px] font-bold text-white">{postData.title}</h1>
+        <h1 className="mb-4 text-[40px] font-bold text-white">
+          {postData?.title ?? ''}
+        </h1>
 
         <div className="relative">
           <button
@@ -58,7 +81,7 @@ export default function PostHeader({
                   <button
                     onClick={onEdit}
                     type="button"
-                    className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm hover:bg-hover"
+                    className="hover:bg-hover flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm"
                   >
                     <img src={fileIcon} alt="" />
                     자료 수정
@@ -67,7 +90,7 @@ export default function PostHeader({
                   <button
                     onClick={onDelete}
                     type="button"
-                    className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm hover:bg-hover"
+                    className="hover:bg-hover flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm"
                   >
                     <img src={deleteIcon} alt="" />
                     자료 삭제
@@ -77,7 +100,7 @@ export default function PostHeader({
                 <button
                   onClick={onReport}
                   type="button"
-                  className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm hover:bg-hover"
+                  className="hover:bg-hover flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm"
                 >
                   <img src={sirenIcon} alt="" className="h-4 w-4" />
                   신고하기
@@ -93,15 +116,17 @@ export default function PostHeader({
 
         <span className="text-[15px] font-medium text-[#888888]">
           {authorName}
-          {isMe && <span className="ml-1 text-xs font-normal text-zinc-600">나</span>}
+          {isMe && (
+            <span className="ml-1 text-xs font-normal text-zinc-600">나</span>
+          )}
         </span>
 
         <span className="text-[14px] text-[#888888]">
-          {formatKoreanDate(postData.createdAt)}
+          {formatKoreanDate(createdAt)}
         </span>
 
         <span className="text-[14px] text-[#888888]">
-          {getTimeAgo(postData.createdAt)}
+          {getTimeAgo(createdAt)}
         </span>
       </div>
     </>

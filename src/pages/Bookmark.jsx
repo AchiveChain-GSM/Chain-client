@@ -5,14 +5,7 @@ import TimelineCard from '../components/TimelineCard';
 import SearchInput from '../components/Search/SearchInput';
 import FilterModal from '../components/FilterModal';
 import FilterIcon from '../assets/icon/filter.svg';
-import axios from 'axios';
-
-// ✅ 명세서 이미지에 따른 필터 경로 매핑
-const BOOKMARK_FILTERS = {
-  recent: 'recent', // 최신순
-  popular: 'likes', // 좋아요순
-  views: 'views', // 조회수순
-};
+import { getBookmarkedPosts } from '../api/posts';
 
 export default function Bookmark() {
   const navigate = useNavigate();
@@ -24,29 +17,10 @@ export default function Bookmark() {
 
   useEffect(() => {
     const fetchBookmarks = async () => {
-      // ✅ 1. 코드 리뷰 반영: 사용자 식별자(userId) 가져오기
-      const userId = localStorage.getItem('userId');
-
-      // ✅ 2. 코드 리뷰 반영: 로그인이 안 된 경우 처리
-      if (!userId) {
-        console.error('즐겨찾기 목록을 불러오려면 로그인이 필요합니다.');
-        setPosts([]);
-        setLoading(false);
-        return;
-      }
-
       try {
         setLoading(true);
-        const filterPath = BOOKMARK_FILTERS[filter] || '';
-
-        // ✅ 3. 코드 리뷰 반영: API 경로에 userId 포함
-        const response = await axios.get(
-          `/api/posts/bookmarked/${userId}/${filterPath}`,
-        );
-
-        const fetchedData = Array.isArray(response.data)
-          ? response.data
-          : response.data.content || [];
+        const data = await getBookmarkedPosts(filter, { size: 200, page: 0 });
+        const fetchedData = Array.isArray(data) ? data : data?.content || [];
 
         setPosts(fetchedData);
       } catch (err) {
@@ -119,25 +93,30 @@ export default function Bookmark() {
                     데이터를 불러오는 중...
                   </div>
                 ) : (
-                  <div className="grid max-w-fit grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
+                  <div className="grid w-full grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
                     {filteredItems.length === 0 ? (
-                      <div className="col-span-full mt-[60px] text-center text-zinc-600">
-                        {keyword
-                          ? '검색 결과가 없습니다.'
-                          : '즐겨찾기한 자료가 없습니다.'}
+                      <div className="col-span-full">
+                        <div className="mt-[60px] text-center text-zinc-600">
+                          {keyword
+                            ? '검색 결과가 없습니다.'
+                            : '즐겨찾기한 자료가 없습니다.'}
+                        </div>
                       </div>
                     ) : (
-                      filteredItems.map((item) => (
-                        <TimelineCard
-                          key={item.postId}
-                          item={item}
-                          onClick={() =>
-                            navigate(`/post/${item.postId}`, {
-                              state: { post: item },
-                            })
-                          }
-                        />
-                      ))
+                      filteredItems.map((item) => {
+                        const postId = item?.postId ?? item?.id;
+                        return (
+                          <TimelineCard
+                            key={postId}
+                            item={item}
+                            onClick={() =>
+                              navigate(`/posts/${postId}`, {
+                                state: { post: item },
+                              })
+                            }
+                          />
+                        );
+                      })
                     )}
                   </div>
                 )}

@@ -1,52 +1,130 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import axios from 'axios';
-import TopBar from './components/topbar';
-import Login from './pages/Login';
-import Timeline from './pages/Timeline';
-import Signup from './pages/Signup';
-import Search from './pages/Search';
-import Recent from './pages/Recent';
-import Bookmark from './pages/Bookmark';
-import MyData from './pages/mydata';
-import UploadPage from './pages/Upload';
-import FindPassword from './pages/Findps';
-import PostDetail from './pages/PostDetail';
-import PostEdit from './components/postDetail/PostEditView';
+// src/App.jsx
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
-// ✅ axios 전역 주소 설정 (.env에 넣은 주소를 가져옵니다)
-axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
+import ProtectedRoute from './components/ProtectedRoute';
 
-const AppContent = () => {
-  const location = useLocation();
-  const hideTopBar = ['/login', '/signup', '/find-password'].includes(
-    location.pathname,
-  );
+import Login from './pages/Login.jsx';
+import Timeline from './pages/Timeline.jsx';
+import Search from './pages/Search.jsx';
+import Upload from './pages/Upload.jsx';
+import PostDetail from './pages/PostDetail.jsx';
 
-  return (
-    <div style={{ backgroundColor: '#1d1d1d', minHeight: '100vh' }}>
-      {!hideTopBar && <TopBar />}
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={<Timeline />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/find-password" element={<FindPassword />} />
-        <Route path="/search" element={<Search />} />
-        <Route path="/recent" element={<Recent />} />
-        <Route path="/bookmark" element={<Bookmark />} />
-        <Route path="/mydata" element={<MyData />} />
-        <Route path="/upload" element={<UploadPage />} />
-        <Route path="/posts/:id" element={<PostDetail />} />
+import Bookmark from './pages/Bookmark.jsx';
+import MyData from './pages/mydata.jsx';
+import Recent from './pages/Recent.jsx';
+import RecentPost from './pages/RecentPosts.jsx';
+import Findps from './pages/Findps.jsx';
 
-        <Route path="/posts/:id/edit" element={<PostEdit />} />
-      </Routes>
-    </div>
-  );
-};
+import Signup from './pages/signup/Signup.jsx';
+import VerifyEmail from './pages/VerifyEmail.jsx';
+import PostEditView from './components/postDetail/PostEditView.jsx'
 
 export default function App() {
   return (
     <BrowserRouter>
-      <AppContent />
+      <Routes>
+        {/* ✅ 공개 페이지 */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+
+        {/* 필요하면 비번찾기 같은 것도 공개 */}
+        <Route path="/find-password" element={<Findps />} />
+
+        {/* ✅ 로그인 필수: 타임라인/검색/글작성/상세/마이/북마크 등 */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Timeline />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/timeline"
+          element={
+            <ProtectedRoute>
+              <Timeline />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/search"
+          element={
+            <ProtectedRoute>
+              <Search />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/upload"
+          element={
+            <ProtectedRoute>
+              <Upload />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/posts/:id"
+          element={
+            <ProtectedRoute>
+              <PostDetail />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/bookmark"
+          element={
+            <ProtectedRoute>
+              <Bookmark />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/mydata"
+          element={
+            <ProtectedRoute>
+              <MyData />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recent"
+          element={
+            <ProtectedRoute>
+              <Recent />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recent-post"
+          element={
+            <ProtectedRoute>
+              <RecentPost />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/posts/:id/edit"
+          element={
+            <ProtectedRoute>
+              <PostEditView />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ✅ 없는 경로 처리 */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </BrowserRouter>
   );
 }

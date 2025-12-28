@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo/logo-vertical-symbol.svg';
 import peopleShape from '../assets/peopleShape.svg';
@@ -14,21 +14,108 @@ const TopBar = () => {
   const [user, setUser] = useState({
     name: '',
     details: '',
+    email: '',
+    isProfileRegistered: false, // ✅ 프로필 등록 여부
   });
 
-  useEffect(() => {
-    const savedName = localStorage.getItem('userName') || '';
-    const savedGen = localStorage.getItem('generation') || '';
-    const savedClass = localStorage.getItem('userClass') || '';
-    const savedNum = localStorage.getItem('userNumber') || '';
+  const getToken = () =>
+    localStorage.getItem('accessToken') ||
+    sessionStorage.getItem('accessToken') ||
+    '';
+
+  // ✅ accessToken이 sessionStorage에 있으면 "현재 로그인 저장소"를 session으로 간주
+  const getActiveStorage = () => {
+    return sessionStorage.getItem('accessToken') ? sessionStorage : localStorage;
+  };
+
+  const decodeJwtPayload = (token) => {
+    try {
+      if (!token) return null;
+      const payloadPart = token.split('.')[1];
+      if (!payloadPart) return null;
+
+      const base64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = base64.padEnd(
+        base64.length + ((4 - (base64.length % 4)) % 4),
+        '=',
+      );
+
+      return JSON.parse(atob(padded));
+    } catch {
+      return null;
+    }
+  };
+
+  const loadMe = () => {
+    const token = getToken();
+    const payload = decodeJwtPayload(token);
+    const email = payload?.sub || '';
+
+    const store = getActiveStorage();
+
+    let profile = null;
+    if (email) {
+      // ✅ 현재 로그인 저장소(session/local) 우선, 없으면 반대쪽도 fallback
+      const cached =
+        store.getItem(`profile:${email}`) ||
+        localStorage.getItem(`profile:${email}`) ||
+        sessionStorage.getItem(`profile:${email}`);
+
+      if (cached) {
+        try {
+          profile = JSON.parse(cached);
+        } catch {
+          profile = null;
+        }
+      }
+    }
+
+    const nameRaw = profile?.userName || payload?.userName || '';
+    const gen = profile?.generation || payload?.generation || '';
+    const cls = profile?.userClass || payload?.userClass || '';
+    const num = profile?.userNumber || payload?.userNumber || '';
+
+    const fallbackName = email ? String(email).split('@')[0] : '';
+    const displayName = nameRaw || fallbackName;
+
+    const hasClassInfo = Boolean(gen || cls || num);
+    const details = hasClassInfo
+      ? `${gen}기 ${cls}반 ${num}번`
+      : email
+        ? '학생 정보 미등록'
+        : '정보 없음';
+
+    const isProfileRegistered = Boolean(
+      (profile?.userName && profile?.generation && profile?.userClass && profile?.userNumber) ||
+        (nameRaw && gen && cls && num),
+    );
 
     setUser({
-      name: savedName,
-      details: savedName
-        ? `${savedGen}학년 ${savedClass}반 ${savedNum}번`
-        : '정보 없음',
+      name: displayName,
+      email,
+      details,
+      isProfileRegistered,
     });
+  };
+
+  useEffect(() => {
+    loadMe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const clearAuthStorage = () => {
+    // ✅ 토큰만 제거 (프로필 캐시는 계정별로 남겨둬도 괜찮습니다)
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    sessionStorage.removeItem('accessToken');
+    sessionStorage.removeItem('refreshToken');
+
+    // ✅ 공용키(예전 방식) 혹시 남아있으면 정리
+    ['email', 'userName', 'generation', 'userClass', 'userNumber'].forEach((k) => {
+      localStorage.removeItem(k);
+      sessionStorage.removeItem(k);
+    });
+  };
 
   const handleCloseDeleteModal = () => {
     setIsDeleteModalOpen(false);
@@ -36,26 +123,30 @@ const TopBar = () => {
   };
 
   const handleWithdrawal = () => {
+    // 실제 탈퇴 API가 없다면, 프론트만으로는 “로그아웃 + 캐시 정리” 수준입니다.
     if (deleteName === user.name && user.name !== '') {
       alert('회원탈퇴가 완료되었습니다.');
-      localStorage.clear();
+      clearAuthStorage();
       navigate('/login');
     }
   };
 
-  const profileModalStyle = {
-    position: 'absolute',
-    top: '60px',
-    right: '0',
-    width: '234px',
-    backgroundColor: '#1D1D1D',
-    borderRadius: '12px',
-    padding: '24px',
-    display: 'flex',
-    flexDirection: 'column',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-    zIndex: 1001,
-  };
+  const profileModalStyle = useMemo(
+    () => ({
+      position: 'absolute',
+      top: '60px',
+      right: '0',
+      width: '234px',
+      backgroundColor: '#1D1D1D',
+      borderRadius: '12px',
+      padding: '24px',
+      display: 'flex',
+      flexDirection: 'column',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+      zIndex: 1001,
+    }),
+    [],
+  );
 
   return (
     <>
@@ -72,11 +163,7 @@ const TopBar = () => {
           </div>
 
           <button onClick={() => setIsProfileModalOpen(!isProfileModalOpen)}>
-            <img
-              src={peopleShape}
-              alt="Profile"
-              className="h-[24px] w-[24px]"
-            />
+            <img src={peopleShape} alt="Profile" className="h-[24px] w-[24px]" />
           </button>
 
           {isProfileModalOpen && (
@@ -86,17 +173,25 @@ const TopBar = () => {
                   {user.name || '사용자'}
                 </div>
                 <div className="text-[16px] text-[#E2E2E2]">{user.details}</div>
+                {user.email ? (
+                  <div className="mt-[6px] text-[13px] text-zinc-400">{user.email}</div>
+                ) : null}
               </div>
+
+             
+
               <button
                 className="mt-[24px] flex h-[48px] items-center justify-center gap-[8px] rounded-[8px] border border-white bg-transparent text-[16px] text-white"
                 onClick={() => {
-                  localStorage.clear();
+                  clearAuthStorage();
                   navigate('/login');
                 }}
+                type="button"
               >
                 로그아웃
                 <img src={afterIcon} alt="arrow" className="h-auto w-[18px]" />
               </button>
+
               <div
                 className="mt-[16px] cursor-pointer text-left text-[14px] text-[#4E4E4E]"
                 onClick={() => {
@@ -117,12 +212,9 @@ const TopBar = () => {
             <button
               className="absolute top-[32px] right-[32px] flex items-center justify-center"
               onClick={handleCloseDeleteModal}
+              type="button"
             >
-              <img
-                src={xIcon}
-                alt="Close"
-                style={{ width: '24px', height: '14px' }}
-              />
+              <img src={xIcon} alt="Close" style={{ width: '24px', height: '14px' }} />
             </button>
 
             <div className="text-[20px] font-medium text-white">회원탈퇴</div>
@@ -149,6 +241,7 @@ const TopBar = () => {
                   ? 'cursor-pointer bg-white text-black'
                   : 'cursor-not-allowed bg-[#4E4E4E] text-[#1D1D1D]'
               }`}
+              type="button"
             >
               회원탈퇴
             </button>

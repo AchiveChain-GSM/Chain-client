@@ -15,8 +15,18 @@ export default function BaseCard({ item }) {
   const [views, setViews] = useState(item?.views ?? 16);
 
   const maxTags = 3;
-  const tagsToShow = item?.tags?.slice(0, maxTags) || [];
-  const remainingCount = (item?.tags?.length || 0) - maxTags;
+  const tags = Array.isArray(item?.tags)
+    ? item.tags
+        .map((t) =>
+          typeof t === 'string' ? t : t?.name ?? t?.tagName ?? t?.value ?? null,
+        )
+        .map((t) => (t == null ? '' : String(t)))
+        .flatMap((t) => t.split(/[\s,]+/g))
+        .map((t) => t.trim().replace(/^#+/, ''))
+        .filter(Boolean)
+    : [];
+  const tagsToShow = tags.slice(0, maxTags);
+  const remainingCount = tags.length - maxTags;
 
   const handleLike = () => {
     setLikes((prev) => (liked ? prev - 1 : prev + 1));

@@ -1,92 +1,98 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // ✅ 추가
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import TimelineCard from '../components/TimelineCard';
 import SearchInput from '../components/Search/SearchInput';
-import axios from 'axios';
+import api from '../api/axios';
 
 const FILTERS = {
-  DEFAULT: 'default',
-  RECENT: 'recent',
-  LIKES: 'likes',
-  VIEWS: 'views',
+  DEFAULT: 'default', // /viewed
+  RECENT: 'recent',   // /viewed/recent
+  LIKES: 'likes',     // /viewed/likes
+  VIEWS: 'views',     // /viewed/views
 };
 
 export default function RecentPosts() {
-  const navigate = useNavigate(); // ✅ 추가
+  const navigate = useNavigate();
+
   const [keyword, setKeyword] = useState('');
+  const [filter, setFilter] = useState(FILTERS.DEFAULT);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filter, setFilter] = useState(FILTERS.DEFAULT);
-
-  const userId = localStorage.getItem('userId');
 
   useEffect(() => {
-    if (!userId) {
-      setError('로그인이 필요한 서비스입니다.');
-      setLoading(false);
-      return;
-    }
-
-    const fetchRecentPosts = async () => {
+    const fetchViewedPosts = async () => {
       try {
         setLoading(true);
         setError(null);
-        const baseEndpoint = `/api/posts/viewed/${userId}`;
+
+        // ✅ 백엔드 엔드포인트 매핑
         const endpoint =
-          filter !== FILTERS.DEFAULT
-            ? `${baseEndpoint}/${filter}`
-            : baseEndpoint;
-        const response = await axios.get(endpoint);
-        setPosts(response.data.content || []);
+          filter === FILTERS.RECENT
+            ? '/api/posts/viewed/recent'
+            : filter === FILTERS.LIKES
+              ? '/api/posts/viewed/likes'
+              : filter === FILTERS.VIEWS
+                ? '/api/posts/viewed/views'
+                : '/api/posts/viewed';
+
+        const res = await api.get(endpoint);
+
+        const data = Array.isArray(res.data)
+          ? res.data
+          : res.data.content || [];
+
+        setPosts(data);
       } catch (err) {
-        setError('최근 본 자료를 불러오는 중 에러가 발생했습니다.');
-        console.error('로딩 에러:', err);
+        console.error('최근 본 자료 로딩 실패:', err);
+        setError('최근 본 자료를 불러오는 중 오류가 발생했습니다.');
+        setPosts([]);
       } finally {
         setLoading(false);
       }
     };
-    fetchRecentPosts();
-  }, [filter, userId]);
 
-  const searchResults = posts.filter((item) =>
-    item.title.toLowerCase().includes(keyword.toLowerCase()),
+    fetchViewedPosts();
+  }, [filter]);
+
+  const filteredPosts = posts.filter((item) =>
+    item.title?.toLowerCase().includes(keyword.toLowerCase()),
   );
-
-  const filterOptions = [
-    { id: FILTERS.RECENT, label: '최신순' },
-    { id: FILTERS.VIEWS, label: '조회수순' },
-    { id: FILTERS.LIKES, label: '좋아요순' },
-  ];
 
   return (
     <Layout>
       <div className="flex h-full gap-[24px] px-[24px] pb-[24px]">
+        {/* ===== 메인 영역 ===== */}
         <div className="flex-1 overflow-hidden rounded-xl bg-[#1D1D1D]">
           <div className="custom-scrollbar h-full overflow-y-auto px-[32px] pt-[48px]">
             <h2 className="text-[40px] font-bold text-white">최근 본 자료</h2>
+
             <div className="mt-[36px]">
               <SearchInput onSearch={(kw) => setKeyword(kw)} />
             </div>
-            <div className="mt-[36px] flex flex-col">
+
+            <div className="mt-[36px]">
               {loading ? (
                 <div className="mt-[60px] text-center text-zinc-500">
-                  데이터 로딩 중...
+                  데이터를 불러오는 중입니다...
                 </div>
               ) : error ? (
                 <div className="mt-[60px] text-center text-red-500">
                   {error}
                 </div>
+              ) : filteredPosts.length === 0 ? (
+                <div className="mt-[60px] text-center text-zinc-600">
+                  최근 본 자료가 없습니다
+                </div>
               ) : (
                 <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                  {(keyword ? searchResults : posts).map((item) => (
+                  {filteredPosts.map((item) => (
                     <TimelineCard
                       key={item.postId}
                       item={item}
-                      // ✅ 클릭 기능 추가
                       onClick={() =>
-                        navigate(`/post/${item.postId}`, {
+                        navigate(`/posts/${item.postId}`, {
                           state: { post: item },
                         })
                       }
@@ -95,30 +101,63 @@ export default function RecentPosts() {
                 </div>
               )}
             </div>
+
+            <div className="h-[100px]" />
           </div>
         </div>
-        <div className="w-[200px] shrink-0 pt-[48px]">
-          <div className="flex flex-col gap-6 rounded-xl bg-[#1D1D1D] p-[24px]">
-            <p className="mb-4 flex items-center gap-2 font-bold text-white">
-              <span className="text-[18px]">⋮≡</span> 정렬 기준
-            </p>
-            <div className="flex flex-col gap-3 text-[15px]">
-              {filterOptions.map((option) => (
-                <button
-                  key={option.id}
-                  onClick={() => setFilter(option.id)}
-                  className={
-                    filter === option.id
-                      ? 'text-left font-bold text-white'
-                      : 'text-left text-zinc-500 hover:text-zinc-300'
-                  }
-                >
-                  {option.label}
-                </button>
-              ))}
+
+        {/* ===== 사이드 정렬 버튼 ===== */}
+        <aside className="w-[180px] shrink-0">
+          <div className="rounded-xl bg-[#1D1D1D] p-[20px] text-white">
+            <div className="mb-[16px] text-[16px] font-semibold">정렬</div>
+
+            <div className="flex flex-col gap-[12px] text-[14px]">
+              <button
+                onClick={() => setFilter(FILTERS.DEFAULT)}
+                className={`text-left ${
+                  filter === FILTERS.DEFAULT
+                    ? 'font-semibold text-white'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                기본
+              </button>
+
+              <button
+                onClick={() => setFilter(FILTERS.RECENT)}
+                className={`text-left ${
+                  filter === FILTERS.RECENT
+                    ? 'font-semibold text-white'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                최신순
+              </button>
+
+              <button
+                onClick={() => setFilter(FILTERS.LIKES)}
+                className={`text-left ${
+                  filter === FILTERS.LIKES
+                    ? 'font-semibold text-white'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                좋아요순
+              </button>
+
+              <button
+                onClick={() => setFilter(FILTERS.VIEWS)}
+                className={`text-left ${
+                  filter === FILTERS.VIEWS
+                    ? 'font-semibold text-white'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                조회수순
+              </button>
             </div>
           </div>
-        </div>
+        </aside>
       </div>
     </Layout>
   );

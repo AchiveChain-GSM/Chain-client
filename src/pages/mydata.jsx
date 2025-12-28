@@ -1,82 +1,71 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // ✅ 1. 이동 도구 추가
+// src/pages/MyData.jsx
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import TimelineCard from '../components/TimelineCard';
 import SearchInput from '../components/Search/SearchInput';
 import FilterModal from '../components/FilterModal';
 import FilterIcon from '../assets/icon/filter.svg';
-import axios from 'axios';
+import api from '../api/axios';
+
+const FILTER_TO_ENDPOINT = {
+  recent: '/api/posts/written/recent',
+  likes: '/api/posts/written/likes',
+  views: '/api/posts/written/views',
+  default: '/api/posts/written',
+};
+
+function pickContent(data) {
+  if (Array.isArray(data)) return data;
+  return data?.content ?? [];
+}
 
 export default function MyData() {
-  const navigate = useNavigate(); // ✅ 2. 이동 함수 선언
+  const navigate = useNavigate();
+
   const [keyword, setKeyword] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [filter, setFilter] = useState('recent'); // recent | likes | views | default
   const [posts, setPosts] = useState([]);
+
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); // ✅ 에러 피드백을 위한 상태 추가
-  const [filter, setFilter] = useState('recent');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchMyPosts = async () => {
-      const userId = localStorage.getItem('userId'); // 🔑 내 자료 조회를 위해 필수
-
-      // ✅ 코드 리뷰 반영: 로그인이 안 된 경우 예외 처리
-      if (!userId) {
-        setError('로그인이 필요한 서비스입니다.');
-        setLoading(false);
-        return;
-      }
-
       try {
         setLoading(true);
-        setError(null);
+        setError('');
 
-        // 명세서 기반 엔드포인트: /api/posts/written/{userId}/{filter}
-        const response = await axios.get(
-          `/api/posts/written/${userId}/${filter}`,
-        );
+        const endpoint =
+          FILTER_TO_ENDPOINT[filter] ?? FILTER_TO_ENDPOINT.default;
+        const res = await api.get(endpoint);
 
-        const fetchedData = Array.isArray(response.data)
-          ? response.data
-          : response.data.content || [];
-
-        setPosts(fetchedData);
-      } catch (err) {
-        console.error('내 자료 호출 실패:', err);
+        setPosts(pickContent(res.data));
+      } catch (e) {
+        console.error('내 자료 호출 실패:', e);
         setError('자료를 불러오는 중 문제가 발생했습니다.');
         setPosts([]);
       } finally {
         setLoading(false);
       }
     };
+
     fetchMyPosts();
   }, [filter]);
 
-  const filtered = posts.filter((item) =>
-    item.title?.toLowerCase().includes(keyword.toLowerCase()),
-  );
+  const filtered = useMemo(() => {
+    const kw = keyword.trim().toLowerCase();
+    if (!kw) return posts;
+    return posts.filter((p) => (p.title ?? '').toLowerCase().includes(kw));
+  }, [posts, keyword]);
 
   return (
     <Layout>
       <div className="relative flex h-full px-[24px] pb-[24px]">
         <div className="flex-1 overflow-hidden rounded-xl bg-[#1D1D1D]">
           <div className="custom-scrollbar h-full overflow-y-auto pt-[48px]">
-            <style jsx>{`
-              .custom-scrollbar::-webkit-scrollbar {
-                width: 10px;
-              }
-              .custom-scrollbar::-webkit-scrollbar-track {
-                background: transparent;
-              }
-              .custom-scrollbar::-webkit-scrollbar-thumb {
-                background: #2b2b2b;
-                border-radius: 10px;
-              }
-              .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                background: #3d3d3d;
-              }
-            `}</style>
-
             <div className="px-[32px]">
               <h2 className="text-[40px] font-bold tracking-tight text-white">
                 내 자료
@@ -93,7 +82,7 @@ export default function MyData() {
                 </h3>
 
                 <button
-                  onClick={() => setIsModalOpen(!isModalOpen)}
+                  onClick={() => setIsModalOpen((v) => !v)}
                   className="z-10 flex items-center justify-center p-1 transition-opacity hover:opacity-70"
                 >
                   <img
@@ -110,27 +99,24 @@ export default function MyData() {
                     불러오는 중...
                   </div>
                 ) : error ? (
-                  <div className="py-10 text-center text-red-500">{error}</div>
+                  <div className="py-10 text-center text-zinc-600">{error}</div>
+                ) : filtered.length === 0 ? (
+                  <div className="py-10 text-center text-zinc-600">
+                    자료가 존재하지 않습니다
+                  </div>
                 ) : (
                   <div className="grid max-w-fit grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
-                    {filtered.length === 0 ? (
-                      <div className="col-span-full mt-[60px] text-center text-zinc-600">
-                        자료가 존재하지 않습니다
-                      </div>
-                    ) : (
-                      filtered.map((item) => (
-                        <TimelineCard
-                          key={item.postId}
-                          item={item}
-                          // ✅ 3. 클릭 시 상세 페이지로 이동하며 데이터 전달 추가
-                          onClick={() =>
-                            navigate(`/post/${item.postId}`, {
-                              state: { post: item },
-                            })
-                          }
-                        />
-                      ))
-                    )}
+                    {filtered.map((item) => (
+                      <TimelineCard
+                        key={item.postId}
+                        item={item}
+                        onClick={() =>
+                          navigate(`/posts/${item.postId}`, {
+                            state: { post: item },
+                          })
+                        }
+                      />
+                    ))}
                   </div>
                 )}
               </div>

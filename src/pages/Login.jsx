@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api, { setTokens } from '../api/axios';
 import logo from '../assets/logo/logo-vertical-symbol.svg';
 import checkIcon from '../assets/icon/check.svg';
 
@@ -11,24 +11,68 @@ const Login = () => {
   const [isAutoLogin, setIsAutoLogin] = useState(false);
   const [isError, setIsError] = useState(false);
 
+  const decodeJwtPayload = (token) => {
+    try {
+      if (!token) return null;
+      const payloadPart = token.split('.')[1];
+      if (!payloadPart) return null;
+
+      const base64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = base64.padEnd(
+        base64.length + ((4 - (base64.length % 4)) % 4),
+        '=',
+      );
+      return JSON.parse(atob(padded));
+    } catch {
+      return null;
+    }
+  };
+
+  const getEmailFromToken = (accessToken) => {
+    const payload = decodeJwtPayload(accessToken);
+    return payload?.sub || '';
+  };
+
   const handleLogin = async () => {
     try {
-      const response = await axios.post('/api/auth/login', {
-        email,
-        password,
-      });
+      setIsError(false);
 
-      if (response.data && response.data.accessToken) {
-        localStorage.setItem('accessToken', response.data.accessToken);
+      const response = await api.post('/api/auth/login', { email, password });
+      const { accessToken, refreshToken } = response.data || {};
 
-        if (response.data.refreshToken) {
-          localStorage.setItem('refreshToken', response.data.refreshToken);
-        }
-
-        setIsError(false);
-        navigate('/');
+      if (!accessToken) {
+        setIsError(true);
+        return;
       }
-    } catch (error) {
+
+      // ✅ 토큰 저장 (기존 방식 유지)
+      setTokens(
+        { accessToken, refreshToken },
+        { persist: isAutoLogin ? 'local' : 'session' },
+      );
+
+      // ✅ “현재 로그인 저장소”를 자동로그인 여부로 결정
+      const store = isAutoLogin ? localStorage : sessionStorage;
+
+      const tokenEmail = getEmailFromToken(accessToken);
+      if (tokenEmail) {
+        // ✅ 공용키는 최소화: email 정도만 저장(선택)
+        store.setItem('email', tokenEmail);
+
+        // ✅ 프로필 캐시가 이미 있으면 현재 로그인 저장소에도 복사
+        const cached =
+          localStorage.getItem(`profile:${tokenEmail}`) ||
+          sessionStorage.getItem(`profile:${tokenEmail}`);
+
+        if (cached) {
+          store.setItem(`profile:${tokenEmail}`, cached);
+        }
+        // 캐시가 없으면 그냥 둡니다.
+        // TopBar는 email만으로도 fallback 표시가 됩니다.
+      }
+
+      navigate('/');
+    } catch (e) {
       setIsError(true);
     }
   };
@@ -45,11 +89,7 @@ const Login = () => {
     >
       <div
         className="flex items-center justify-center"
-        style={{
-          width: '138px',
-          height: '220px',
-          marginBottom: '80px',
-        }}
+        style={{ width: '138px', height: '220px', marginBottom: '80px' }}
       >
         <img
           src={logo}
@@ -93,6 +133,7 @@ const Login = () => {
               marginBottom: '12px',
             }}
           />
+
           <input
             type="password"
             placeholder="비밀번호 입력"
@@ -178,10 +219,7 @@ const Login = () => {
           className="flex justify-center gap-[12px]"
           style={{ color: '#888888', fontSize: '12px' }}
         >
-          <span
-            className="cursor-pointer"
-            onClick={() => navigate('/find-password')}
-          >
+          <span className="cursor-pointer" onClick={() => navigate('/find-password')}>
             비밀번호 찾기
           </span>
           <span style={{ color: '#2F3233' }}>|</span>

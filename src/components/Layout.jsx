@@ -1,4 +1,4 @@
-import TopBar from './topbar';
+import TopBar from './TopBar';
 import Sidebar from './sidebar';
 
 const Layout = ({ children }) => {

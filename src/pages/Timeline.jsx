@@ -2,39 +2,65 @@ import Layout from '../components/Layout';
 import TimelineCard from '../components/TimelineCard';
 import Calendar from '../components/calendar/calendar';
 import SearchInput from '../components/Search/SearchInput';
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // ✅ 1. 이동 도구 가져오기
-import axios from 'axios';
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getTimelinePosts } from '../api/posts';
+
+function toMonthRangeISO(dateLike) {
+  const d = dateLike instanceof Date ? dateLike : new Date(dateLike);
+  if (Number.isNaN(d.getTime())) return null;
+
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+  const mm = String(month).padStart(2, '0');
+
+  const lastDay = new Date(year, month, 0).getDate();
+  const ddLast = String(lastDay).padStart(2, '0');
+
+  return {
+    from: `${year}-${mm}-01T00:00:00Z`,
+    to: `${year}-${mm}-${ddLast}T23:59:59Z`,
+    year,
+    month,
+  };
+}
 
 export default function Timeline() {
-  const navigate = useNavigate(); // ✅ 2. 이동 함수 선언
+  const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // ✅ Calendar가 무엇을 주든 Date로 맞추기
   const [currentDate, setCurrentDate] = useState(new Date());
 
   useEffect(() => {
     const fetchTimeline = async () => {
+      const range = toMonthRangeISO(currentDate);
+      if (!range) {
+        console.error('currentDate 파싱 실패:', currentDate);
+        setPosts([]);
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
 
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth() + 1;
-        const lastDay = new Date(year, month, 0).getDate();
-        const formattedMonth = String(month).padStart(2, '0');
-
-        const response = await axios.post('/api/posts/timeline', {
-          from: `${year}-${formattedMonth}-01T00:00:00Z`,
-          to: `${year}-${formattedMonth}-${lastDay}T23:59:59Z`,
+        const data = await getTimelinePosts({
+          from: range.from,
+          to: range.to,
+          size: 200,
+          page: 0,
         });
 
-        const fetchedData = Array.isArray(response.data)
-          ? response.data
-          : response.data.content || [];
-
-        setPosts(fetchedData);
+        setPosts(data?.content ?? []);
       } catch (error) {
-        console.error('타임라인 로딩 에러:', error);
+        console.error(
+          '타임라인 로딩 에러:',
+          error?.response?.status,
+          error?.response?.data ?? error,
+        );
         setPosts([]);
       } finally {
         setLoading(false);
@@ -44,16 +70,29 @@ export default function Timeline() {
     fetchTimeline();
   }, [currentDate]);
 
-  const searchResults = posts.filter((item) =>
-    item.title?.toLowerCase().includes(keyword.toLowerCase()),
-  );
+  const shown = useMemo(() => {
+    const kw = keyword.trim().toLowerCase();
+    if (!kw) return posts;
+    return posts.filter((p) => (p.title ?? '').toLowerCase().includes(kw));
+  }, [posts, keyword]);
+
+  const monthLabel = useMemo(() => {
+    const d = currentDate instanceof Date ? currentDate : new Date(currentDate);
+    return Number.isNaN(d.getTime()) ? '' : `${d.getMonth() + 1}월`;
+  }, [currentDate]);
 
   return (
     <Layout>
       <div className="flex h-full gap-[24px] px-[24px] pb-[24px]">
         {/* 캘린더 영역 */}
         <div className="scrollbar-hide w-[390px] shrink-0 overflow-y-auto">
-          <Calendar onDateChange={(date) => setCurrentDate(date)} />
+          <Calendar
+            onDateChange={(value) => {
+              // ✅ Date가 아니면 Date로 변환 시도
+              const next = value instanceof Date ? value : new Date(value);
+              setCurrentDate(next);
+            }}
+          />
         </div>
 
         {/* 콘텐츠 영역 */}
@@ -76,7 +115,7 @@ export default function Timeline() {
             `}</style>
 
             <h2 className="text-[40px] font-bold tracking-tight text-white">
-              {currentDate.getMonth() + 1}월
+              {monthLabel}
             </h2>
 
             <div className="mt-[36px]">
@@ -97,13 +136,12 @@ export default function Timeline() {
                   )}
 
                   <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                    {(keyword ? searchResults : posts).map((item) => (
+                    {shown.map((item) => (
                       <TimelineCard
                         key={item.postId}
                         item={item}
-                        // ✅ 3. 클릭 시 상세 페이지로 이동하며 데이터 전달
                         onClick={() =>
-                          navigate(`/post/${item.postId}`, {
+                          navigate(`/posts/${item.postId}`, {
                             state: { post: item },
                           })
                         }
@@ -111,12 +149,11 @@ export default function Timeline() {
                     ))}
                   </div>
 
-                  {!loading &&
-                    (keyword ? searchResults : posts).length === 0 && (
-                      <div className="mt-[60px] text-center text-zinc-600">
-                        자료가 존재하지 않습니다.
-                      </div>
-                    )}
+                  {!loading && shown.length === 0 && (
+                    <div className="mt-[60px] text-center text-zinc-600">
+                      자료가 존재하지 않습니다.
+                    </div>
+                  )}
                 </div>
               )}
             </div>

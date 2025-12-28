@@ -11,47 +11,122 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { Markdown } from 'tiptap-markdown';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { createLowlight, common } from 'lowlight';
-import { createPost, updatePost } from '../../api/posts'; // updatePost import 확인
+
+import { createPost, updatePost } from '../../api/posts';
 import { useNavigate } from 'react-router-dom';
 
 const lowlight = createLowlight(common);
 
 export default function useWriteEditor(initialPost = null) {
   const navigate = useNavigate();
-  
+
+  // ✅ 수정모드 판단: postId / id 둘 다 대응
+  const editPostId = initialPost?.postId ?? initialPost?.id ?? null;
+  const isEdit = Boolean(editPostId);
+
   const [title, setTitle] = useState(initialPost?.title || '');
-  const [tags, setTags] = useState(initialPost?.tags || []);
+
+  // ✅ initialPost.tags가 string[]이 아닐 수 있어 정규화
+  const [tags, setTags] = useState(() => {
+    const raw = initialPost?.tags ?? [];
+    const arr = Array.isArray(raw) ? raw : [raw];
+
+    const flat = arr
+      .flatMap((x) => {
+        if (x == null) return [];
+        if (typeof x === 'string') return [x];
+        return [x?.name ?? x?.tagName ?? x?.value ?? ''];
+      })
+      .flatMap((s) => String(s).split(/[\t\n\r\f\v ,]+/g))
+      .map((s) => s.trim().replace(/^#+/, ''))
+      .filter(Boolean);
+
+    const seen = new Set();
+    const uniq = [];
+    for (const t of flat) {
+      if (seen.has(t)) continue;
+      seen.add(t);
+      uniq.push(t);
+    }
+    return uniq;
+  });
+
   const [tagInput, setTagInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ✅ 삭제된 기존 파일의 ID를 담을 상태 추가
-  const [removeFileIds, setRemoveFileIds] = useState([]);
+  // ✅ 태그 정규화(입력/전송 공통)
+  // - "#" 제거
+  // - 콤마/공백으로 여러 개 입력 지원
+  // - 중복/빈값 제거
+  const normalizeTagsForRequest = useCallback((input) => {
+    const arr = Array.isArray(input) ? input : [input];
+
+    const flat = arr
+      .flatMap((x) => {
+        if (x == null) return [];
+        if (typeof x === 'string') return [x];
+        return [x?.name ?? x?.tagName ?? x?.value ?? ''];
+      })
+      .flatMap((v) => String(v).split(/[\s,]+/g))
+      .map((v) => v.trim())
+      .map((v) => v.replace(/^#+/, '')) // ###tag -> tag
+      .filter(Boolean);
+
+    const seen = new Set();
+    const uniq = [];
+    for (const t of flat) {
+      if (seen.has(t)) continue;
+      seen.add(t);
+      uniq.push(t);
+    }
+    return uniq;
+  }, []);
+
+  // ✅ 수정 화면에서 tags가 객체로 내려와도 문자열로 정리해서 표시
+  useEffect(() => {
+    if (!initialPost) return;
+    setTags((prev) => normalizeTagsForRequest(initialPost?.tags ?? prev));
+  }, [initialPost, normalizeTagsForRequest]);
+
+  function unescapeHtml(str) {
+    if (!str) return '';
+    const el = document.createElement('textarea');
+    el.innerHTML = str;
+    return el.value;
+  }
+
+  function looksLikeHtml(s) {
+    const t = String(s || '').trim();
+    return t.startsWith('<') && t.includes('>');
+  }
+
+  // ✅ 삭제된 기존 "이미지/파일"의 ID를 담을 상태
+  // 백 스펙에 removeImage_ids 로 보낼 거라서 이름도 맞춰둠
+  const [removeImage_ids, setRemoveImage_ids] = useState([]);
 
   // 파일 관리 초기화
   const [files, setFiles] = useState(() => {
     const init = initialPost?.files || [];
     return init.map((f) => ({
-      // 프론트에서 관리할 고유 ID (화면 표시용)
-      id: Math.random().toString(36).slice(2), 
+      id: Math.random().toString(36).slice(2),
+
       // 서버에 저장된 실제 ID (삭제 시 필요)
-      fileId: f.fileId || f.id || null, 
+      // (백에서 imageId/fileId/id 무엇으로 주든 대응)
+      fileId: f.fileId || f.imageId || f.id || null,
+
       name: f.name || f.originalName || '첨부파일',
       size: f.size || 0,
       type: f.type || f.mimeType || '',
-      url: f.url || null, // 기존 이미지라면 url 존재
-      file: f.file instanceof File ? f.file : null, // 새로 올린 파일이면 File 객체 존재
+
+      // 기존 이미지라면 url 존재
+      url: f.url || f.imageUrl || f.downloadUrl || null,
+
+      // 새로 올린 파일이면 File 객체 존재
+      file: f.file instanceof File ? f.file : null,
     }));
   });
 
-  const [previews, setPreviews] = useState(() => {
-    // 기존 이미지(url이 있는 경우) 미리보기 세팅
-    const initialPreviews = {};
-    if (initialPost?.files) {
-      // 필요하다면 기존 URL을 previews에 넣을 수도 있지만, 
-      // EditorFileUpload에서 file.url을 직접 쓰므로 여기선 빈 객체로 시작해도 무방합니다.
-    }
-    return initialPreviews;
-  });
+  const [previews, setPreviews] = useState(() => ({}));
 
   const editor = useEditor({
     extensions: [
@@ -63,13 +138,34 @@ export default function useWriteEditor(initialPost = null) {
       Placeholder.configure({ placeholder: '내용을 입력하세요...' }),
       Markdown.configure({ html: false, transformPastedText: true }),
     ],
-    content: initialPost?.content || '',
+    content: '',
     editorProps: {
       attributes: {
-        class: 'ProseMirror min-h-[300px] w-full text-white text-md outline-none leading-relaxed',
+        class:
+          'ProseMirror min-h-[300px] w-full text-white text-md outline-none leading-relaxed',
       },
     },
   });
+
+  useEffect(() => {
+    if (!editor) return;
+
+    const raw = initialPost?.content ?? '';
+    if (!raw) {
+      editor.commands.setContent('', false);
+      return;
+    }
+
+    // 1) &lt;p&gt;...&lt;/p&gt; 처럼 escape된 HTML이면 복구
+    const fixed = unescapeHtml(raw);
+
+    // 2) HTML이면 HTML로, 아니면 텍스트로 넣기
+    if (looksLikeHtml(fixed)) {
+      editor.commands.setContent(fixed, false);
+    } else {
+      editor.commands.setContent(`<p>${fixed}</p>`, false);
+    }
+  }, [editor, initialPost?.content]);
 
   const toolbarActions = useMemo(
     () => ({
@@ -80,7 +176,8 @@ export default function useWriteEditor(initialPost = null) {
       toggleH1: () => editor?.chain().focus().toggleHeading({ level: 1 }).run(),
       toggleH2: () => editor?.chain().focus().toggleHeading({ level: 2 }).run(),
       toggleBulletList: () => editor?.chain().focus().toggleBulletList().run(),
-      toggleOrderedList: () => editor?.chain().focus().toggleOrderedList().run(),
+      toggleOrderedList: () =>
+        editor?.chain().focus().toggleOrderedList().run(),
       setColor: (e) => editor?.chain().focus().setColor(e.target.value).run(),
     }),
     [editor],
@@ -89,37 +186,39 @@ export default function useWriteEditor(initialPost = null) {
   const onDrop = useCallback((acceptedFiles) => {
     const next = acceptedFiles.map((file) => {
       const id = Math.random().toString(36).slice(2);
+
       if (file.type?.startsWith('image/')) {
         const objectUrl = URL.createObjectURL(file);
         setPreviews((prev) => ({ ...prev, [id]: objectUrl }));
       }
+
       return {
         id,
         fileId: null, // 새 파일은 서버 ID 없음
         name: file.name,
         size: file.size,
         type: file.type,
-        file, // File 객체 있음
+        file,
         url: null,
       };
     });
+
     setFiles((prev) => [...prev, ...next]);
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
-  // ✅ 파일 삭제 로직 수정
+  // ✅ 파일(이미지) 삭제 로직
   const removeFile = (id) => {
     setFiles((prev) => {
-      // 1. 삭제하려는 파일 찾기
       const target = prev.find((f) => f.id === id);
-      
-      // 2. 이미 서버에 있던 파일(fileId 존재)이라면 삭제 목록(removeFileIds)에 추가
-      if (target && target.fileId) {
-        setRemoveFileIds((ids) => [...ids, target.fileId]);
+
+      // ✅ 이미 서버에 있던 파일(이미지)이라면 삭제 목록에 추가
+      if (target?.fileId) {
+        setRemoveImage_ids((ids) => [...ids, target.fileId]);
       }
 
-      // 3. 미리보기 URL 해제 (새로 올린 파일인 경우)
+      // ✅ 미리보기 URL 해제 (새로 올린 파일인 경우)
       if (previews[id]) {
         URL.revokeObjectURL(previews[id]);
         setPreviews((p) => {
@@ -128,8 +227,7 @@ export default function useWriteEditor(initialPost = null) {
           return next;
         });
       }
-      
-      // 4. UI 목록에서 제거
+
       return prev.filter((f) => f.id !== id);
     });
   };
@@ -144,14 +242,15 @@ export default function useWriteEditor(initialPost = null) {
   const handleTagKeyDown = (e) => {
     if (e.key === 'Enter' && tagInput.trim()) {
       e.preventDefault();
-      const v = tagInput.trim();
-      setTags((prev) => (prev.includes(v) ? prev : [...prev, v]));
+      const next = normalizeTagsForRequest(tagInput);
+      setTags((prev) => normalizeTagsForRequest([...prev, ...next]));
       setTagInput('');
     }
   };
+
   const removeTag = (tag) => setTags((prev) => prev.filter((t) => t !== tag));
 
-  // ✅ 게시 및 수정 처리 핸들러
+  // ✅ 게시/수정 처리
   const handlePublish = async () => {
     if (isSubmitting) return;
 
@@ -166,44 +265,48 @@ export default function useWriteEditor(initialPost = null) {
       return;
     }
 
-    // 새로 추가한 이미지 파일만 골라내기 (File 객체가 있는 것)
-    const newImages = files
-      .filter((f) => f.file instanceof File)
+    // ✅ 태그 정규화(서버에는 항상 문자열 배열만 보냄)
+    const safeTags = normalizeTagsForRequest(tags);
+
+    // 카드/리스트용 요약(description)
+    const plain = (editor?.getText?.() || '').replace(/\s+/g, ' ').trim();
+    const description = plain.slice(0, 120);
+
+    // 새로 추가한 파일 중 이미지/기타 분리
+    const newImageFiles = files
+      .filter((f) => f.file instanceof File && f.type?.startsWith('image/'))
+      .map((f) => f.file);
+
+    const newOtherFiles = files
+      .filter((f) => f.file instanceof File && !f.type?.startsWith('image/'))
       .map((f) => f.file);
 
     setIsSubmitting(true);
     try {
-      // ✅ initialPost.postId가 있으면 '수정', 없으면 '생성'
-      if (initialPost?.postId) {
-        // [수정]
-        await updatePost(initialPost.postId, {
+      if (isEdit) {
+        // ✅ [수정]
+        await updatePost(editPostId, {
           title: title.trim(),
           content: html,
-          tags,
-          images: newImages,        // 새로 추가된 파일들
-          removeImage_ids: removeFileIds, // 삭제된 기존 파일 ID들
-        });
-        
-        // 수정 완료 후 해당 상세페이지로 이동
-        navigate(`/posts/${initialPost.postId}`);
-        
-      } else {
-        // [생성]
-        const path = await createPost({
-          title: title.trim(),
-          content: html,
-          tags,
-          images: newImages,
+          tags: safeTags,
+          images: newImageFiles,
+          files: newOtherFiles,
+          removeImage_ids, // ✅ 삭제된 기존 파일/이미지 id 리스트
         });
 
-        // 응답 URL에서 ID 추출 (백엔드 응답 형식에 따라 조정 필요)
-        const match = String(path).trim().match(/\/api\/posts\/(.+)/);
-        if (match) {
-          navigate(`/posts/${match[1]}`);
-        } else {
-          // path 파싱이 안되면 목록으로 이동하거나 처리
-          navigate('/'); 
-        }
+        navigate(`/posts/${editPostId}`, { replace: true });
+      } else {
+        // ✅ [생성]
+        const newPostId = await createPost({
+          title: title.trim(),
+          description,
+          content: html,
+          tags: safeTags,
+          images: newImageFiles,
+          files: newOtherFiles,
+        });
+
+        navigate(`/posts/${newPostId}`, { replace: true });
       }
     } catch (e) {
       console.error(e);
@@ -227,13 +330,16 @@ export default function useWriteEditor(initialPost = null) {
     setTagInput,
     handleTagKeyDown,
     removeTag,
+
     files,
     removeFile,
     formatFileSize,
     previews,
+
     getRootProps,
     getInputProps,
     isDragActive,
+
     toolbarActions,
     handlePublish,
     isSubmitting,
