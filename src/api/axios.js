@@ -120,29 +120,34 @@ function logTokenSummary(token) {
 /** ---------------------------------------
  * Public 요청 판별
  * -------------------------------------- */
+function getPath(config) {
+  const raw = String(config?.url || '');
+  try {
+    // raw가 절대주소면 pathname만 추출
+    if (raw.startsWith('http')) return new URL(raw).pathname;
+  } catch (_) {}
+  // 상대주소면 그대로
+  return raw;
+}
+
 function isPublicRequest(config) {
-  const url = String(config?.url || '');
+  const url = getPath(config);
   const method = String(config?.method || 'get').toLowerCase();
 
-  // ✅ auth / health 는 항상 public
   if (/^\/?api\/auth\b/.test(url) || /^\/?api\/health\b/.test(url)) return true;
-
   if (method !== 'get') return false;
 
-  // ✅ “진짜 공개 GET”만 허용 (화이트리스트 방식)
-  // 목록/검색/상세 조회 같은 공개 API만 Authorization 제거
   const PUBLIC_GET = [
-    /^\/?api\/posts\/recent\b/,
     /^\/?api\/posts\/popular\b/,
     /^\/?api\/posts\/most-view\b/,
     /^\/?api\/posts\/search\b/,
-    /^\/?api\/posts\/\d+\b/, // ✅ /api/posts/3 같은 단건 조회만
-    // 필요하면 추가:
-    // /^\/?api\/posts\b$/  // GET /api/posts (기본 목록) 쓰면 주석 해제
+    // ✅ 단건 공개를 진짜로 public로 둘 거면 주석 해제
+    // /^\/?api\/posts\/\d+\b/,
   ];
 
   return PUBLIC_GET.some((re) => re.test(url));
 }
+
 
 /** ---------------------------------------
  * Request interceptor
@@ -194,7 +199,6 @@ api.interceptors.request.use(
   },
   (error) => Promise.reject(error),
 );
-
 /** ---------------------------------------
  * Response interceptor (401 처리)
  * -------------------------------------- */

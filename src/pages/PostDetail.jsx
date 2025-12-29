@@ -128,6 +128,14 @@ function normalizeAuthor(raw) {
     email: raw?.authorEmail ?? null,
   };
 }
+function getFileNameFromUrl(url = '') {
+  try {
+    const decoded = decodeURIComponent(url);
+    return decoded.split('/').pop()?.split('?')[0] || 'image';
+  } catch {
+    return url.split('/').pop() || 'image';
+  }
+}
 
 function normalizePost(raw, routeId) {
   if (!raw) return null;
@@ -184,6 +192,23 @@ export default function PostDetail() {
     }
     return (currentUser.name || '') === (postData.author?.name || '');
   }, [postData, currentUser]);
+
+  const mergedFiles = useMemo(() => {
+    const files = postData?.files ?? [];
+    const images = postData?.images ?? [];
+
+    // images: string(url)[] 라는 전제 (normalizeImages가 그렇게 만들고 있음)
+    const imageAsFiles = images.map((url, idx) => ({
+      id: `img-${idx}`,
+      fileId: `img-${idx}`,
+      originalName: `이미지-${idx + 1}`,
+      name: `이미지-${idx + 1}`,
+      url, // ✅ 클릭 시 열기용
+      __type: 'image',
+    }));
+
+    return [...imageAsFiles, ...files];
+  }, [postData?.files, postData?.images]);
 
   const refreshPost = useCallback(async () => {
     const res = await getPost(postId);
@@ -345,7 +370,7 @@ export default function PostDetail() {
 
   return (
     <Layout>
-      <div className="mx-auto flex h-full w-full max-w-[1200px] flex-col px-6 py-10 bg-bg ml-4 rounded-lg">
+      <div className="bg-bg mx-auto ml-4 flex h-full w-full flex-col rounded-lg px-10 py-10">
         {loading && !postData ? (
           <div className="py-24 text-center text-zinc-400">불러오는 중…</div>
         ) : !postData ? (
@@ -382,7 +407,20 @@ export default function PostDetail() {
                 bookmarkPending={bookmarkPending}
               />
 
-              <PostFiles files={postData?.files ?? []} />
+              <PostFiles
+                files={mergedFiles}
+                onDownload={(f) => {
+                  // ✅ 이미지(우리가 만든 url) or 원래 파일 링크들 중 가능한 것 사용
+                  const link =
+                    f?.url ||
+                    f?.downloadUrl ||
+                    f?.fileUrl ||
+                    f?.filePath ||
+                    f?.path;
+
+                  if (link) window.open(link, '_blank');
+                }}
+              />
 
               <PostComments
                 comments={postData?.comments ?? []}

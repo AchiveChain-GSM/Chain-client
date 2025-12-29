@@ -1,5 +1,6 @@
-// src/api/auth.js
-import { getAccessToken } from './axios'; // axios.js의 getAccessToken을 활용하거나 직접 작성 가능
+
+
+import { getAccessToken } from './axios';
 
 function base64UrlDecode(str) {
   const pad = '='.repeat((4 - (str.length % 4)) % 4);
@@ -31,11 +32,9 @@ function isExpired(payload) {
   return Date.now() >= payload.exp * 1000;
 }
 
-// ✅ 수정된 부분: localStorage와 sessionStorage 둘 다 확인
+// ✅ 수정 완료: axios.js의 getAccessToken을 사용하여 로직을 하나로 합쳤어!
 export function getCurrentUser() {
-  const token =
-    localStorage.getItem('accessToken') ||
-    sessionStorage.getItem('accessToken');
+  const token = getAccessToken();
 
   if (!token) {
     return { userId: null, email: null, name: '', isAuthenticated: false };
@@ -47,13 +46,11 @@ export function getCurrentUser() {
   }
 
   const email = payload.sub ?? null;
-
   const name =
     payload.name ??
     localStorage.getItem('userName') ??
     sessionStorage.getItem('userName') ??
     '';
-
   const userId = payload.userId ?? payload.id ?? null;
 
   return {

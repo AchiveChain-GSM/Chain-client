@@ -1,5 +1,6 @@
 // src/api/posts.js
 import api from './axios';
+import publicApi from './publicAxios';
 
 /* =========================
  * 유틸
@@ -12,7 +13,6 @@ function pickList(data) {
   return [];
 }
 
-// ✅ tags를 깔끔한 문자열 배열로 변환 (빈값 제거, # 제거 등)
 function normalizeTagsForRequest(tags) {
   const arr = Array.isArray(tags) ? tags : [tags];
 
@@ -22,7 +22,8 @@ function normalizeTagsForRequest(tags) {
       if (typeof x === 'string') return [x];
       return [x?.name ?? x?.tagName ?? x?.value ?? ''];
     })
-    .flatMap((v) => String(v).split(/[\s,]+/g))
+    // ✅ 여기만 변경: ; 도 태그 구분자로 인정
+    .flatMap((v) => String(v).split(/[;,|\s]+/g))
     .map((v) => v.trim())
     .map((v) => v.replace(/^#+/, ''))
     .filter(Boolean);
@@ -37,17 +38,21 @@ function normalizeTagsForRequest(tags) {
   return uniq;
 }
 
+
 /* =========================
  * 게시글 조회
  * ========================= */
 
 // ✅ 단건 조회
 export async function getPostPublic(postId) {
-  const res = await api.get(`/api/posts/${postId}`, {
-    headers: {
-      Authorization: undefined, // ✅ 강제로 제거
-    },
-  });
+  console.log('[getPostPublic] using api instance');
+  console.log(
+    '[tokens]',
+    localStorage.getItem('accessToken'),
+    sessionStorage.getItem('accessToken'),
+  );
+
+  const res = await api.get(`/api/posts/${postId}`);
   return res.data;
 }
 
@@ -87,7 +92,7 @@ export async function getTimelinePosts({
   from,
   to,
   page = 0,
-  size = 200,
+  size = 2000,
 } = {}) {
   const res = await api.post('/api/posts/timeline', { from, to, page, size });
   return res.data;
@@ -230,7 +235,7 @@ export async function updatePost(
 }
 
 export async function deletePost(postId) {
-  const res = await api.post(`/api/posts/delete/${postId}`);
+  const res = await api.delete(`/api/posts/delete/${postId}`);
   return res.data;
 }
 
