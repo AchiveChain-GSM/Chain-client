@@ -1,4 +1,3 @@
-// src/pages/MyData.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -8,16 +7,22 @@ import FilterModal from '../components/FilterModal';
 import FilterIcon from '../assets/icon/filter.svg';
 import api from '../api/axios';
 
-const FILTER_TO_ENDPOINT = {
-  recent: '/api/posts/written/recent',
-  likes: '/api/posts/written/likes',
-  views: '/api/posts/written/views',
-  default: '/api/posts/written',
+import {
+  POST_FILTER,
+  normalizeFilterKey,
+  getFilterLabel,
+} from '../utils/postFilters';
+
+// ✅ 표준키 기반 endpoint map (MyData 전용)
+const WRITTEN_ENDPOINT_BY_FILTER = {
+  [POST_FILTER.RECENT]: '/api/posts/written/recent',
+  [POST_FILTER.LIKES]: '/api/posts/written/likes',
+  [POST_FILTER.VIEWS]: '/api/posts/written/views',
 };
 
 function pickContent(data) {
   if (Array.isArray(data)) return data;
-  return data?.content ?? [];
+  return data?.content ?? data?.posts ?? [];
 }
 
 export default function MyData() {
@@ -26,36 +31,46 @@ export default function MyData() {
   const [keyword, setKeyword] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const [filter, setFilter] = useState('recent'); // recent | likes | views | default
+  const [filter, setFilter] = useState(POST_FILTER.RECENT);
   const [posts, setPosts] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    let alive = true;
+
     const fetchMyPosts = async () => {
       try {
         setLoading(true);
         setError('');
 
         const endpoint =
-          FILTER_TO_ENDPOINT[filter] ?? FILTER_TO_ENDPOINT.default;
-        const res = await api.get(endpoint);
+          WRITTEN_ENDPOINT_BY_FILTER[filter] ??
+          WRITTEN_ENDPOINT_BY_FILTER[POST_FILTER.RECENT];
 
-        setPosts(pickContent(res.data));
+        const res = await api.get(endpoint, { params: { page: 0, size: 200 } });
+        const list = pickContent(res.data);
+
+        if (!alive) return;
+        setPosts(list);
       } catch (e) {
         console.error('내 자료 호출 실패:', e);
+        if (!alive) return;
         setError('자료를 불러오는 중 문제가 발생했습니다.');
         setPosts([]);
       } finally {
-        setLoading(false);
+        if (alive) setLoading(false);
       }
     };
 
     fetchMyPosts();
+    return () => {
+      alive = false;
+    };
   }, [filter]);
 
-  const filtered = useMemo(() => {
+  const displayPosts = useMemo(() => {
     const kw = keyword.trim().toLowerCase();
     if (!kw) return posts;
     return posts.filter((p) => (p.title ?? '').toLowerCase().includes(kw));
@@ -78,10 +93,19 @@ export default function MyData() {
             <div className="mt-[36.5px]">
               <div className="mb-[36px] flex items-center justify-between pr-[58px] pl-[32px]">
                 <h3 className="text-[24px] font-semibold text-white">
-                  {keyword ? `“${keyword}” 검색결과` : ''}
+                  {keyword ? `“${keyword}” 검색결과` : getFilterLabel(filter)}
                 </h3>
-
-                
+                <button
+                  onClick={() => setIsModalOpen((v) => !v)}
+                  className="z-10 flex items-center justify-center p-1 transition-opacity hover:opacity-70"
+                  type="button"
+                >
+                  <img
+                    src={FilterIcon}
+                    alt="filter"
+                    className="h-[24px] w-[24px]"
+                  />
+                </button>
               </div>
 
               <div className="px-[32px]">
@@ -91,23 +115,26 @@ export default function MyData() {
                   </div>
                 ) : error ? (
                   <div className="py-10 text-center text-zinc-600">{error}</div>
-                ) : filtered.length === 0 ? (
+                ) : displayPosts.length === 0 ? (
                   <div className="py-10 text-center text-zinc-600">
                     자료가 존재하지 않습니다
                   </div>
                 ) : (
                   <div className="grid max-w-fit grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
-                    {filtered.map((item) => (
-                      <TimelineCard
-                        key={item.postId}
-                        item={item}
-                        onClick={() =>
-                          navigate(`/posts/${item.postId}`, {
-                            state: { post: item },
-                          })
-                        }
-                      />
-                    ))}
+                    {displayPosts.map((item) => {
+                      const postId = item?.postId ?? item?.id;
+                      return (
+                        <TimelineCard
+                          key={postId ?? `${item?.title}-${item?.createAt ?? ''}`}
+                          item={item}
+                          onClick={() =>
+                            navigate(`/posts/${postId}`, {
+                              state: { post: item },
+                            })
+                          }
+                        />
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -128,8 +155,8 @@ export default function MyData() {
               style={{ top: '201px', right: '72px' }}
             >
               <FilterModal
-                onFilterChange={(newFilter) => {
-                  setFilter(newFilter);
+                onFilterChange={(raw) => {
+                  setFilter(normalizeFilterKey(raw));
                   setIsModalOpen(false);
                 }}
               />

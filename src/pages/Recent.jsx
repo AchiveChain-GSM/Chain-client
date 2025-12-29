@@ -1,53 +1,61 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import TimelineCard from '../components/TimelineCard';
 import SearchInput from '../components/Search/SearchInput';
 import FilterModal from '../components/FilterModal';
 import FilterIcon from '../assets/icon/filter.svg';
+
 import { getViewedPosts } from '../api/posts';
-import { getCurrentUser } from '../api/auth';
+
+import {
+  POST_FILTER,
+  normalizeFilterKey,
+  getFilterLabel,
+} from '../utils/postFilters';
+import { applyDateFilter } from '../utils/dateFilters';
+
+function pickContent(data) {
+  if (Array.isArray(data)) return data;
+  return data?.content ?? data?.posts ?? [];
+}
 
 export default function Recent() {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('recent'); // recent | popular | most-view 등
+
+  // ✅ 표준키
+  const [filter, setFilter] = useState(POST_FILTER.RECENT);
 
   useEffect(() => {
     let alive = true;
 
     const fetchRecentData = async () => {
-      const user = getCurrentUser();
-      if (!user?.isAuthenticated) {
-        if (!alive) return;
-        console.error('로그인 정보가 없습니다.');
-        setPosts([]);
-        setLoading(false);
-        return;
-      }
-
       try {
-        if (!alive) return;
         setLoading(true);
 
-        // ✅ getViewedPosts(sort, params) 형태에 맞춤
-        const data = await getViewedPosts(filter, {
-          page: 0,
-          size: 200,
-          // 서버가 Pageable sort를 받으면 적용, 아니면 무시해도 무방
-          sort: 'createAt,desc',
-        });
+        // today/week/year는 viewed endpoint가 없을 확률이 높으니 recent로 받아오고 클라에서 자르기
+        const baseKey =
+          filter === POST_FILTER.TODAY ||
+          filter === POST_FILTER.WEEK ||
+          filter === POST_FILTER.YEAR
+            ? POST_FILTER.RECENT
+            : filter;
 
-        const fetched = Array.isArray(data) ? data : data?.content ?? [];
+        const data = await getViewedPosts(baseKey, { page: 0, size: 2000 });
+        let list = pickContent(data);
+
+        list = applyDateFilter(list, filter);
 
         if (!alive) return;
-        setPosts(fetched);
+        setPosts(list);
       } catch (err) {
         console.error('최근 본 자료 호출 실패:', err);
-        if (alive) setPosts([]);
+        // 실패 시 기존 posts 유지
       } finally {
         if (alive) setLoading(false);
       }
@@ -59,9 +67,13 @@ export default function Recent() {
     };
   }, [filter]);
 
-  const displayPosts = (keyword ? posts.filter((item) =>
-    item.title?.toLowerCase().includes(keyword.toLowerCase()),
-  ) : posts);
+  const displayPosts = useMemo(() => {
+    const kw = keyword.trim().toLowerCase();
+    if (!kw) return posts;
+    return posts.filter((item) =>
+      (item.title ?? '').toLowerCase().includes(kw),
+    );
+  }, [posts, keyword]);
 
   return (
     <Layout>
@@ -96,7 +108,7 @@ export default function Recent() {
             <div className="mt-[36.5px]">
               <div className="mb-[36px] flex items-center justify-between pr-[58px] pl-[32px]">
                 <h3 className="text-[24px] font-semibold text-white">
-                  {keyword ? `“${keyword}” 검색결과` : '최근 본 항목'}
+                  {keyword ? `“${keyword}” 검색결과` : ' '}
                 </h3>
 
                 
@@ -117,7 +129,7 @@ export default function Recent() {
                       const pid = item?.postId ?? item?.id;
                       return (
                         <TimelineCard
-                          key={pid}
+                          key={pid ?? `${item?.title}-${item?.createAt ?? ''}`}
                           item={item}
                           onClick={() =>
                             navigate(`/posts/${pid}`, {
@@ -147,8 +159,8 @@ export default function Recent() {
               style={{ top: '201px', right: '72px' }}
             >
               <FilterModal
-                onFilterChange={(newFilter) => {
-                  setFilter(newFilter);
+                onFilterChange={(raw) => {
+                  setFilter(normalizeFilterKey(raw));
                   setIsModalOpen(false);
                 }}
               />

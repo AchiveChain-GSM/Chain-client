@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import TimelineCard from '../components/TimelineCard';
@@ -7,35 +7,58 @@ import FilterModal from '../components/FilterModal';
 import FilterIcon from '../assets/icon/filter.svg';
 import { getBookmarkedPosts } from '../api/posts';
 
+import {
+  POST_FILTER,
+  normalizeFilterKey,
+  getFilterLabel,
+} from '../utils/postFilters';
+
+function pickContent(data) {
+  if (Array.isArray(data)) return data;
+  return data?.content ?? data?.posts ?? [];
+}
+
 export default function Bookmark() {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('recent');
+
+  // ✅ 표준키로만 유지
+  const [filter, setFilter] = useState(POST_FILTER.RECENT);
 
   useEffect(() => {
+    let alive = true;
+
     const fetchBookmarks = async () => {
       try {
         setLoading(true);
-        const data = await getBookmarkedPosts(filter, { size: 200, page: 0 });
-        const fetchedData = Array.isArray(data) ? data : data?.content || [];
+        const data = await getBookmarkedPosts(filter, { page: 0, size: 200 });
+        const list = pickContent(data);
 
-        setPosts(fetchedData);
+        if (!alive) return;
+        setPosts(list);
       } catch (err) {
         console.error('즐겨찾기 목록 호출 실패:', err);
-        setPosts([]);
+        // 실패 시 기존 posts 유지
       } finally {
-        setLoading(false);
+        if (alive) setLoading(false);
       }
     };
+
     fetchBookmarks();
+    return () => {
+      alive = false;
+    };
   }, [filter]);
 
-  const filteredItems = posts.filter((item) =>
-    item.title?.toLowerCase().includes(keyword.toLowerCase()),
-  );
+  const displayPosts = useMemo(() => {
+    const kw = keyword.trim().toLowerCase();
+    if (!kw) return posts;
+    return posts.filter((p) => (p.title ?? '').toLowerCase().includes(kw));
+  }, [posts, keyword]);
 
   return (
     <Layout>
@@ -73,9 +96,19 @@ export default function Bookmark() {
             <div className="mt-[36.5px]">
               <div className="mb-[36px] flex items-center justify-between pr-[58px] pl-[32px]">
                 <h3 className="text-[24px] font-semibold text-white">
-                  {keyword ? `“${keyword}” 검색결과` : ''}
+                  {keyword ? `“${keyword}” 검색결과` : getFilterLabel(filter)}
                 </h3>
-                
+                <button
+                  onClick={() => setIsModalOpen((v) => !v)}
+                  className="z-10 flex items-center justify-center p-1 transition-opacity hover:opacity-70"
+                  type="button"
+                >
+                  <img
+                    src={FilterIcon}
+                    alt="filter"
+                    className="h-[24px] w-[24px]"
+                  />
+                </button>
               </div>
 
               <div className="px-[32px]">
@@ -85,7 +118,7 @@ export default function Bookmark() {
                   </div>
                 ) : (
                   <div className="grid w-full grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
-                    {filteredItems.length === 0 ? (
+                    {displayPosts.length === 0 ? (
                       <div className="col-span-full">
                         <div className="mt-[60px] text-center text-zinc-600">
                           {keyword
@@ -94,11 +127,11 @@ export default function Bookmark() {
                         </div>
                       </div>
                     ) : (
-                      filteredItems.map((item) => {
+                      displayPosts.map((item) => {
                         const postId = item?.postId ?? item?.id;
                         return (
                           <TimelineCard
-                            key={postId}
+                            key={postId ?? `${item?.title}-${item?.createAt ?? ''}`}
                             item={item}
                             onClick={() =>
                               navigate(`/posts/${postId}`, {
@@ -128,8 +161,8 @@ export default function Bookmark() {
               style={{ top: '201px', right: '72px' }}
             >
               <FilterModal
-                onFilterChange={(newFilter) => {
-                  setFilter(newFilter);
+                onFilterChange={(raw) => {
+                  setFilter(normalizeFilterKey(raw));
                   setIsModalOpen(false);
                 }}
               />

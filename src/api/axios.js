@@ -138,8 +138,8 @@ function isPublicRequest(config) {
   if (method !== 'get') return false;
 
   const PUBLIC_GET = [
-    /^\/?api\/posts\/popular\b/,
-    /^\/?api\/posts\/most-view\b/,
+   // /^\/?api\/posts\/popular\b/,
+    ///^\/?api\/posts\/most-view\b/,
      // /^\/?api\/posts\/search\b/,
     // ✅ 단건 공개를 진짜로 public로 둘 거면 주석 해제
     // /^\/?api\/posts\/\d+\b/,
@@ -202,6 +202,15 @@ api.interceptors.request.use(
 /** ---------------------------------------
  * Response interceptor (401 처리)
  * -------------------------------------- */
+function isTokenExpired() {
+  const token = sanitizeToken(getAccessToken());
+  if (!token) return true; // 토큰 없으면 사실상 만료 취급
+  const payload = decodeJwt(token);
+  if (!payload?.exp) return false; // exp 없으면 만료판단 불가 → 일단 만료 아님으로 취급
+  const nowSec = Math.floor(Date.now() / 1000);
+  return payload.exp <= nowSec;
+}
+
 api.interceptors.response.use(
   (res) => {
     if (DEBUG_API) console.log('[RES]', res.status, res.config?.url, res.data);
@@ -224,29 +233,26 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // ✅ public 요청에서 난 401은 로그인 리다이렉트/토큰삭제 대상이 아님
-    // (특히 GET /api/posts/** 는 permitAll 이지만, Authorization이 붙으면
-    //  만료 토큰 때문에 JwtAuthFilter가 401을 낼 수 있어 방어적으로 제외)
     const isPublic = isPublicRequest(originalRequest);
 
     if (status === 401 && AUTH_REDIRECT_ON_401 && !isPublic) {
-      // ✅ auth 처리 과정은 제외
-      const isAuthProcess =
-        url.includes('/api/auth/verify-email') ||
-        url.includes('/api/auth/login') ||
-        url.includes('/api/auth/find-password');
+      const expired = isTokenExpired();
 
-      // ✅ 토큰은 무조건 정리 (만료/무효 토큰 루프 방지)
-      if (!isAuthProcess) clearTokens();
-
-      // ✅ 로그인 페이지가 아니면 로그인으로
-      if (!isAuthProcess && !window.location.pathname.startsWith('/login')) {
-        window.location.href = '/login';
+      // ✅ 만료된 경우에만 토큰 삭제 + 로그인 이동
+      if (expired) {
+        clearTokens();
+        if (!window.location.pathname.startsWith('/login')) {
+          window.location.href = '/login';
+        }
+      } else {
+        // ✅ 만료가 아닌데 401이면 토큰 지우지 말고 그대로 에러로 둠 (백 문제/권한 문제 추적용)
+        if (DEBUG_API) console.warn('[401 but NOT expired] keep tokens for debug');
       }
     }
 
     return Promise.reject(error);
   },
 );
+
 
 export default api;

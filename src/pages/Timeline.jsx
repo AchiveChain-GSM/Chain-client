@@ -137,7 +137,7 @@ export default function Timeline() {
         </div>
 
         {/* 콘텐츠 영역 */}
-        <div className="flex-1 overflow-hidden rounded-xl bg-[#1D1D1D]">
+        <div className="flex-1 overflow-hidden rounded-lg bg-[#1D1D1D]">
           <div className="custom-scrollbar h-full overflow-y-auto px-[32px] pt-[48px]">
             <style jsx>{`
               .custom-scrollbar::-webkit-scrollbar {
