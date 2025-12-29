@@ -219,10 +219,7 @@ const Login = () => {
           className="flex justify-center gap-[12px]"
           style={{ color: '#888888', fontSize: '12px' }}
         >
-          <span className="cursor-pointer" onClick={() => navigate('/find-password')}>
-            비밀번호 찾기
-          </span>
-          <span style={{ color: '#2F3233' }}>|</span>
+          
           <span className="cursor-pointer" onClick={() => navigate('/signup')}>
             회원가입
           </span>

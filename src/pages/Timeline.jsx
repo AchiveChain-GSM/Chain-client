@@ -32,7 +32,10 @@ export default function Timeline() {
   const [loading, setLoading] = useState(true);
 
   // ✅ Calendar가 무엇을 주든 Date로 맞추기
+
   const [currentDate, setCurrentDate] = useState(new Date());
+
+  const [selectedDaysState, setSelectedDaysState] = useState(null); // Date | null
 
   useEffect(() => {
     const fetchTimeline = async () => {
@@ -70,11 +73,49 @@ export default function Timeline() {
     fetchTimeline();
   }, [currentDate]);
 
+  function toYmdLocal(input) {
+    if (!input) return null;
+    const d = input instanceof Date ? input : new Date(input);
+    if (Number.isNaN(d.getTime())) return null;
+
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function ymdFromYMD(year, month, day) {
+    const mm = String(month).padStart(2, '0');
+    const dd = String(day).padStart(2, '0');
+    return `${year}-${mm}-${dd}`;
+  }
+
   const shown = useMemo(() => {
     const kw = keyword.trim().toLowerCase();
-    if (!kw) return posts;
-    return posts.filter((p) => (p.title ?? '').toLowerCase().includes(kw));
-  }, [posts, keyword]);
+    let list = posts;
+
+    // ✅ 여러 날짜 선택 필터
+    const sel = selectedDaysState;
+    if (
+      sel?.year &&
+      sel?.month &&
+      Array.isArray(sel.days) &&
+      sel.days.length > 0
+    ) {
+      const allowed = new Set(
+        sel.days.map((d) => ymdFromYMD(sel.year, sel.month, d)),
+      );
+      list = list.filter((p) => {
+        const created = p?.createdAt ?? p?.createAt ?? p?.create_at;
+        const ymd = toYmdLocal(created);
+        return ymd && allowed.has(ymd);
+      });
+    }
+
+    // ✅ 검색 필터
+    if (!kw) return list;
+    return list.filter((p) => (p.title ?? '').toLowerCase().includes(kw));
+  }, [posts, keyword, selectedDaysState]);
 
   const monthLabel = useMemo(() => {
     const d = currentDate instanceof Date ? currentDate : new Date(currentDate);
@@ -88,10 +129,10 @@ export default function Timeline() {
         <div className="scrollbar-hide w-[390px] shrink-0 overflow-y-auto">
           <Calendar
             onDateChange={(value) => {
-              // ✅ Date가 아니면 Date로 변환 시도
               const next = value instanceof Date ? value : new Date(value);
               setCurrentDate(next);
             }}
+            onSelectDays={(sel) => setSelectedDaysState(sel)}
           />
         </div>
 

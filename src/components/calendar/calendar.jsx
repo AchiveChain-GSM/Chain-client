@@ -3,7 +3,7 @@ import CalendarHeader from './calendarHeader';
 import CalendarMonth from './calendarMonth';
 import { getTimelinePosts } from '../../api/posts';
 
-export default function Calendar({ onDateChange }) {
+export default function Calendar({ onDateChange, onSelectDays }) {
   const now = useMemo(() => new Date(), []);
   const startYear = now.getFullYear();
   const startMonth = now.getMonth() + 1;
@@ -54,7 +54,7 @@ export default function Calendar({ onDateChange }) {
           size: 500, // 충분히 크게 (필요시 조정)
         });
 
-        const posts = Array.isArray(res) ? res : res?.content ?? [];
+        const posts = Array.isArray(res) ? res : (res?.content ?? []);
 
         // ✅ 중복 제거 + year/month/day 추출
         const uniq = new Set();
@@ -164,6 +164,8 @@ export default function Calendar({ onDateChange }) {
                 selected={selected}
                 setSelected={setSelected}
                 postExistedDays={postExistedDays}
+                onSelectDays={onSelectDays}
+                onSelectDay={onDateChange}
               />
             ))}
           </div>
