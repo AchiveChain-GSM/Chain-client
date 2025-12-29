@@ -23,39 +23,66 @@ export default function Search() {
   const [filter, setFilter] = useState(FILTERS.RECENT);
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        setLoading(true);
+  const fetchPosts = async () => {
+    try {
+      setLoading(true);
 
-        // ✅ keyword가 있으면 검색 API
-        if (keyword.trim()) {
-          const res = await api.get('/api/posts/search', {
-            params: { keyword: keyword.trim() },
-          });
-          setPosts(res.data.content || []);
-          return;
-        }
+      const kw = keyword.trim();
+      const commonParams = { page: 0, size: 2000 };
 
-        // ✅ keyword 없으면 정렬 기준으로 목록
-        const endpoint =
-          filter === FILTERS.RECENT
-            ? '/api/posts/recent'
-            : filter === FILTERS.POPULAR
-              ? '/api/posts/popular'
-              : '/api/posts/most-view';
+      // ✅ keyword가 있으면 검색 API
+      if (kw) {
+        const res = await api.get('/api/posts/search', {
+          params: {
+            keyword: kw,
+            q: kw,
+            query: kw,
+            ...commonParams,
+          },
+        });
 
-        const res = await api.get(endpoint);
-        setPosts(res.data.content || []);
-      } catch (err) {
-        console.error('검색 데이터 로딩 실패:', err);
-        setPosts([]);
-      } finally {
-        setLoading(false);
+        const data = res.data;
+        const list = Array.isArray(data)
+          ? data
+          : (data?.content ?? data?.posts ?? []);
+
+        setPosts(list);
+        return;
       }
-    };
 
-    fetchPosts();
-  }, [filter, keyword]);
+      // ✅ keyword 없으면 정렬 기준으로 목록
+      const endpoint =
+        filter === FILTERS.RECENT
+          ? '/api/posts/recent'
+          : filter === FILTERS.POPULAR
+            ? '/api/posts/popular'
+            : '/api/posts/most-view';
+
+      const res = await api.get(endpoint, { params: commonParams });
+
+      const data = res.data;
+      const list = Array.isArray(data)
+        ? data
+        : (data?.content ?? data?.posts ?? []);
+
+      setPosts(list);
+    } catch (err) {
+      const status = err?.response?.status;
+      console.error('검색 데이터 로딩 실패:', status, err?.response?.data ?? err);
+
+      if (status === 401) {
+        navigate('/login');
+        return;
+      }
+      setPosts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchPosts();
+}, [filter, keyword, navigate]);
+
 
   return (
     <Layout>
@@ -92,16 +119,7 @@ export default function Search() {
                 <h3 className="text-[24px] font-semibold text-white">
                   {keyword ? `“${keyword}” 검색결과` : '전체 자료'}
                 </h3>
-                <button
-                  onClick={() => setIsModalOpen(!isModalOpen)}
-                  className="z-10 flex items-center justify-center p-1 transition-opacity hover:opacity-70"
-                >
-                  <img
-                    src={FilterIcon}
-                    alt="filter"
-                    className="h-[24px] w-[24px]"
-                  />
-                </button>
+                
               </div>
 
               <div className="px-[32px]">

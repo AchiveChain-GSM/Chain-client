@@ -99,17 +99,7 @@ export default function Recent() {
                   {keyword ? `“${keyword}” 검색결과` : '최근 본 항목'}
                 </h3>
 
-                <button
-                  onClick={() => setIsModalOpen(!isModalOpen)}
-                  className="z-10 flex items-center justify-center p-1 transition-opacity hover:opacity-70"
-                  type="button"
-                >
-                  <img
-                    src={FilterIcon}
-                    alt="filter"
-                    className="h-[24px] w-[24px]"
-                  />
-                </button>
+                
               </div>
 
               <div className="px-[32px]">

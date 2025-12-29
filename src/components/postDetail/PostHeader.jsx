@@ -65,51 +65,7 @@ export default function PostHeader({
           {postData?.title ?? ''}
         </h1>
 
-        <div className="relative">
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="p-2 text-zinc-500 hover:text-white"
-            type="button"
-          >
-            <img src={detailIcon} alt="" className="h-4 w-4" />
-          </button>
-
-          {isMenuOpen && (
-            <div className="absolute top-8 right-0 z-50 w-32 rounded-lg bg-[#2A2A2A] p-2">
-              {isOwner ? (
-                <>
-                  <button
-                    onClick={onEdit}
-                    type="button"
-                    className="hover:bg-hover flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm"
-                  >
-                    <img src={fileIcon} alt="" />
-                    자료 수정
-                  </button>
-
-                  <button
-                    onClick={onDelete}
-                    type="button"
-                    className="hover:bg-hover flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm"
-                  >
-                    <img src={deleteIcon} alt="" />
-                    자료 삭제
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={onReport}
-                  type="button"
-                  className="hover:bg-hover flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm"
-                >
-                  <img src={sirenIcon} alt="" className="h-4 w-4" />
-                  신고하기
-                </button>
-              )}
-            </div>
-          )}
         </div>
-      </div>
 
       <div className="mb-8 flex items-center gap-3">
         <img src={peopleShape} alt="프로필" className="h-5 w-5 opacity-80" />

@@ -357,7 +357,7 @@ export default function PostDetail() {
         e?.response?.status,
         e?.response?.data,
       );
-      alert('댓글 작성에 실패했습니다.');
+      alert('설명 작성에 실패했습니다.');
     } finally {
       setCommentPending(false);
     }
@@ -422,14 +422,7 @@ export default function PostDetail() {
                 }}
               />
 
-              <PostComments
-                comments={postData?.comments ?? []}
-                commentInput={commentInput}
-                setCommentInput={setCommentInput}
-                onSubmit={onSubmitComment}
-                commentPending={commentPending}
-                currentUser={currentUser}
-              />
+              
             </div>
 
             {isReportModalOpen && (

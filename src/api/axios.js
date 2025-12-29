@@ -140,7 +140,7 @@ function isPublicRequest(config) {
   const PUBLIC_GET = [
     /^\/?api\/posts\/popular\b/,
     /^\/?api\/posts\/most-view\b/,
-    /^\/?api\/posts\/search\b/,
+     // /^\/?api\/posts\/search\b/,
     // ✅ 단건 공개를 진짜로 public로 둘 거면 주석 해제
     // /^\/?api\/posts\/\d+\b/,
   ];

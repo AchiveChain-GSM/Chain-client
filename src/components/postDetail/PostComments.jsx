@@ -60,7 +60,7 @@ export default function PostComments({
 }) {
   return (
     <div className="pb-20">
-      <h3 className="mb-4 text-[18px] font-bold text-white">댓글</h3>
+      <h3 className="mb-4 text-[18px] font-bold text-white">설명</h3>
 
       <div className="relative mb-8">
         <input
@@ -69,7 +69,7 @@ export default function PostComments({
           disabled={commentPending}
           onChange={(e) => setCommentInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && !commentPending && onSubmit?.()}
-          placeholder={commentPending ? '등록 중...' : '댓글 내용 입력'}
+          placeholder={commentPending ? '등록 중...' : '설명 내용 입력'}
           className={[
             'h-[48px] w-full rounded-lg bg-[#191919] px-4 text-sm text-white outline-none',
             commentPending ? 'opacity-60' : '',

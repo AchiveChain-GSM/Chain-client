@@ -240,7 +240,7 @@ export async function deletePost(postId) {
 }
 
 /* =========================
- * 댓글
+ * 설명
  * ========================= */
 
 export async function getPostComments(postId) {

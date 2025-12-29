@@ -75,16 +75,7 @@ export default function Bookmark() {
                 <h3 className="text-[24px] font-semibold text-white">
                   {keyword ? `“${keyword}” 검색결과` : ''}
                 </h3>
-                <button
-                  onClick={() => setIsModalOpen(!isModalOpen)}
-                  className="z-10 flex items-center justify-center p-1 transition-opacity hover:opacity-70"
-                >
-                  <img
-                    src={FilterIcon}
-                    alt="filter"
-                    className="h-[24px] w-[24px]"
-                  />
-                </button>
+                
               </div>
 
               <div className="px-[32px]">

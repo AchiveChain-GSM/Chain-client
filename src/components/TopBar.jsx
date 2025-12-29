@@ -192,15 +192,7 @@ const TopBar = () => {
                 <img src={afterIcon} alt="arrow" className="h-auto w-[18px]" />
               </button>
 
-              <div
-                className="mt-[16px] cursor-pointer text-left text-[14px] text-[#4E4E4E]"
-                onClick={() => {
-                  setIsDeleteModalOpen(true);
-                  setIsProfileModalOpen(false);
-                }}
-              >
-                회원탈퇴
-              </div>
+              
             </div>
           )}
         </div>
