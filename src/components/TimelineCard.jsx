@@ -1,5 +1,9 @@
 import React from 'react';
 
+function stripHtml(html = '') {
+  return String(html).replace(/<[^>]*>/g, '');
+}
+
 export default function TimelineCard({ item, post, onClick }) {
   // ✅ 어떤 페이지는 item, 어떤 페이지는 post로 넘기니까 둘 다 지원
   const data = item ?? post ?? {};
@@ -8,7 +12,9 @@ export default function TimelineCard({ item, post, onClick }) {
   const tags = Array.isArray(data.tags)
     ? data.tags
         .map((t) =>
-          typeof t === 'string' ? t : t?.name ?? t?.tagName ?? t?.value ?? null,
+          typeof t === 'string'
+            ? t
+            : (t?.name ?? t?.tagName ?? t?.value ?? null),
         )
         .map((t) => (t == null ? '' : String(t)))
         .flatMap((t) => t.split(/[\s,]+/g))
@@ -50,7 +56,7 @@ export default function TimelineCard({ item, post, onClick }) {
         <p className="text-[14px] font-light text-[#AAAAAA]">{author}</p>
 
         <p className="mt-[4px] line-clamp-2 h-[40px] text-[14px] font-light text-[#AAAAAA]">
-          {data.content}
+          {stripHtml(data.content)}
         </p>
       </div>
 
