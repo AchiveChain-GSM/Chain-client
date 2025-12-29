@@ -5,6 +5,7 @@ import TimelineCard from '../components/TimelineCard';
 import SearchInput from '../components/Search/SearchInput';
 import FilterModal from '../components/FilterModal';
 import FilterIcon from '../assets/icon/filter.svg';
+import usePersistedState from '../utils/usePersistedState';
 
 import { getViewedPosts } from '../api/posts';
 
@@ -28,8 +29,11 @@ export default function Recent() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ✅ 표준키
-  const [filter, setFilter] = useState(POST_FILTER.RECENT);
+  const [filter, setFilter] = usePersistedState(
+    'filter:recent',
+    POST_FILTER.RECENT,
+    'local',
+  );
 
   useEffect(() => {
     let alive = true;
@@ -110,8 +114,6 @@ export default function Recent() {
                 <h3 className="text-[24px] font-semibold text-white">
                   {keyword ? `“${keyword}” 검색결과` : ' '}
                 </h3>
-
-                
               </div>
 
               <div className="px-[32px]">

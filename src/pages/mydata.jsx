@@ -6,6 +6,7 @@ import SearchInput from '../components/Search/SearchInput';
 import FilterModal from '../components/FilterModal';
 import FilterIcon from '../assets/icon/filter.svg';
 import api from '../api/axios';
+import usePersistedState from '../utils/usePersistedState';
 
 import {
   POST_FILTER,
@@ -30,8 +31,12 @@ export default function MyData() {
 
   const [keyword, setKeyword] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [filter, setFilter] = usePersistedState(
+    'filter:mydata',
+    POST_FILTER.RECENT,
+    'local',
+  );
 
-  const [filter, setFilter] = useState(POST_FILTER.RECENT);
   const [posts, setPosts] = useState([]);
 
   const [loading, setLoading] = useState(true);
@@ -125,7 +130,9 @@ export default function MyData() {
                       const postId = item?.postId ?? item?.id;
                       return (
                         <TimelineCard
-                          key={postId ?? `${item?.title}-${item?.createAt ?? ''}`}
+                          key={
+                            postId ?? `${item?.title}-${item?.createAt ?? ''}`
+                          }
                           item={item}
                           onClick={() =>
                             navigate(`/posts/${postId}`, {

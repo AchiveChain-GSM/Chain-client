@@ -6,6 +6,7 @@ import SearchInput from '../components/Search/SearchInput';
 import FilterModal from '../components/FilterModal';
 import FilterIcon from '../assets/icon/filter.svg';
 import api from '../api/axios';
+import usePersistedState from '../utils/usePersistedState';
 
 import {
   POST_FILTER,
@@ -32,8 +33,11 @@ export default function Search() {
 
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  const [filter, setFilter] = useState(POST_FILTER.RECENT);
+ const [filter, setFilter] = usePersistedState(
+   'filter:search',
+   POST_FILTER.RECENT,
+   'local',
+ );
 
   useEffect(() => {
     let alive = true;
