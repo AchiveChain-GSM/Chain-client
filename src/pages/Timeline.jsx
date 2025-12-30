@@ -32,9 +32,7 @@ export default function Timeline() {
   const [loading, setLoading] = useState(true);
 
   // ✅ Calendar가 무엇을 주든 Date로 맞추기
-
   const [currentDate, setCurrentDate] = useState(new Date());
-
   const [selectedDaysState, setSelectedDaysState] = useState(null); // Date | null
 
   useEffect(() => {
@@ -90,6 +88,39 @@ export default function Timeline() {
     return `${year}-${mm}-${dd}`;
   }
 
+  // ✅ 날짜(yyyy-mm-dd) 기반 그룹핑 (정렬 포함)
+  function groupByDateYmd(list) {
+    const map = list.reduce((acc, post) => {
+      const created = post?.createdAt ?? post?.createAt ?? post?.create_at;
+      const ymd = toYmdLocal(created);
+      if (!ymd) return acc;
+
+      if (!acc[ymd]) acc[ymd] = [];
+      acc[ymd].push(post);
+      return acc;
+    }, {});
+
+    // 날짜 내 정렬(최신순)
+    Object.keys(map).forEach((ymd) => {
+      map[ymd].sort((a, b) => {
+        const da = new Date(a?.createdAt ?? a?.createAt ?? a?.create_at);
+        const db = new Date(b?.createdAt ?? b?.createAt ?? b?.create_at);
+        return db - da;
+      });
+    });
+
+    // 날짜 그룹 정렬(최신 날짜가 위)
+    return Object.entries(map).sort((a, b) => (a[0] < b[0] ? 1 : -1));
+  }
+
+  // ✅ 라벨: "12월 18일"
+  function ymdToLabel(ymd) {
+    if (!ymd) return '';
+    const [y, m, d] = ymd.split('-').map(Number);
+    if (!y || !m || !d) return ymd;
+    return `${m}월 ${d}일`;
+  }
+
   const shown = useMemo(() => {
     const kw = keyword.trim().toLowerCase();
     let list = posts;
@@ -103,8 +134,9 @@ export default function Timeline() {
       sel.days.length > 0
     ) {
       const allowed = new Set(
-        sel.days.map((d) => ymdFromYMD(sel.year, sel.month, d)),
+        sel.days.map((day) => ymdFromYMD(sel.year, sel.month, day)),
       );
+
       list = list.filter((p) => {
         const created = p?.createdAt ?? p?.createAt ?? p?.create_at;
         const ymd = toYmdLocal(created);
@@ -116,6 +148,9 @@ export default function Timeline() {
     if (!kw) return list;
     return list.filter((p) => (p.title ?? '').toLowerCase().includes(kw));
   }, [posts, keyword, selectedDaysState]);
+
+  // ✅ 날짜별 그룹(렌더용)
+  const grouped = useMemo(() => groupByDateYmd(shown), [shown]);
 
   const monthLabel = useMemo(() => {
     const d = currentDate instanceof Date ? currentDate : new Date(currentDate);
@@ -176,21 +211,30 @@ export default function Timeline() {
                     </h3>
                   )}
 
-                  <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                    {shown.map((item) => (
-                      <TimelineCard
-                        key={item.postId}
-                        item={item}
-                        onClick={() =>
-                          navigate(`/posts/${item.postId}`, {
-                            state: { post: item },
-                          })
-                        }
-                      />
-                    ))}
-                  </div>
+                  {/* ✅ 날짜별 섹션 렌더 */}
+                  {grouped.map(([ymd, items]) => (
+                    <div key={ymd} className="mb-[48px]">
+                      <h3 className="mb-[24px] text-[20px] font-semibold text-white">
+                        {ymdToLabel(ymd)}
+                      </h3>
 
-                  {!loading && shown.length === 0 && (
+                      <div className="grid grid-cols-1 gap-[36px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                        {items.map((item) => (
+                          <TimelineCard
+                            key={item.postId}
+                            item={item}
+                            onClick={() =>
+                              navigate(`/posts/${item.postId}`, {
+                                state: { post: item },
+                              })
+                            }
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
+                  {!loading && grouped.length === 0 && (
                     <div className="mt-[60px] text-center text-zinc-600">
                       자료가 존재하지 않습니다.
                     </div>
@@ -198,6 +242,7 @@ export default function Timeline() {
                 </div>
               )}
             </div>
+
             <div className="h-[80px]" />
           </div>
         </div>
