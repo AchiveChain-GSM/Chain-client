@@ -3,7 +3,7 @@ import Sidebar from './sidebar';
 
 const Layout = ({ children }) => {
   return (
-    <div className="font-pretendard flex h-screen w-full flex-col overflow-hidden bg-[#0F0F0F] text-white">
+    <div className=" flex h-screen w-full flex-col overflow-hidden bg-[#0F0F0F] text-white">
       <TopBar />
       {/* 탑바 높이에 맞춰 pt 수치를 확인하세요! */}
       <div className="flex flex-1 overflow-hidden pt-[132px]">

@@ -136,7 +136,7 @@ export default function Calendar({ onDateChange, onSelectDays }) {
   }, [calendarData]);
 
   return (
-    <aside className="bg-bg flex h-full w-[390px] flex-col overflow-hidden rounded-t-lg">
+    <aside className="bg-bg flex h-full w-[390px] flex-col overflow-hidden rounded-lg">
       <CalendarHeader year={viewYear} />
 
       {daysLoading && (

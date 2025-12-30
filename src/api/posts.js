@@ -110,7 +110,10 @@ const VIEWED_ENDPOINTS = {
   'most-view': '/api/posts/viewed/views',
 };
 
-export async function getViewedPosts(sortOrParams = 'recent', maybeParams = {}) {
+export async function getViewedPosts(
+  sortOrParams = 'recent',
+  maybeParams = {},
+) {
   let sortKey = 'recent';
   let params = {};
 
@@ -145,10 +148,7 @@ export async function getLikedPosts(sort = 'recent', params = {}) {
   if (sort === 'popular') sort = 'likes';
   if (sort === 'most-view') sort = 'views';
 
-  // 서버가 sort 쿼리파라미터를 지원하는 경우에만 유효
-  if (sort === 'likes') safeParams.sort = safeParams.sort ?? 'likes,desc';
-  else if (sort === 'views') safeParams.sort = safeParams.sort ?? 'views,desc';
-  else safeParams.sort = safeParams.sort ?? 'createdAt,desc';
+  delete safeParams.sort;
 
   const res = await api.get('/api/posts/liked', { params: safeParams });
   return res.data;

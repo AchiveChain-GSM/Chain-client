@@ -6,24 +6,19 @@ import SearchInput from '../components/Search/SearchInput';
 import FilterModal from '../components/FilterModal';
 import FilterIcon from '../assets/icon/filter.svg';
 import api from '../api/axios';
-import usePersistedState from '../utils/usePersistedState';
 
-import {
-  POST_FILTER,
-  normalizeFilterKey,
-  getFilterLabel,
-} from '../utils/postFilters';
+import { applyClientSortAndFilter } from '../utils/postClientSort';
 
-// ✅ 표준키 기반 endpoint map (MyData 전용)
-const WRITTEN_ENDPOINT_BY_FILTER = {
-  [POST_FILTER.RECENT]: '/api/posts/written/recent',
-  [POST_FILTER.LIKES]: '/api/posts/written/likes',
-  [POST_FILTER.VIEWS]: '/api/posts/written/views',
+const FILTER_TO_ENDPOINT = {
+  recent: '/api/posts/written/recent',
+  likes: '/api/posts/written/likes',
+  views: '/api/posts/written/views',
+  default: '/api/posts/written',
 };
 
 function pickContent(data) {
   if (Array.isArray(data)) return data;
-  return data?.content ?? data?.posts ?? [];
+  return data?.content ?? [];
 }
 
 export default function MyData() {
@@ -31,55 +26,44 @@ export default function MyData() {
 
   const [keyword, setKeyword] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [filter, setFilter] = usePersistedState(
-    'filter:mydata',
-    POST_FILTER.RECENT,
-    'local',
-  );
+
+  // ✅ 필터 유지
+  const [filter, setFilter] = useState('recent');
 
   const [posts, setPosts] = useState([]);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    let alive = true;
-
     const fetchMyPosts = async () => {
       try {
         setLoading(true);
         setError('');
 
+        // MyData는 엔드포인트가 나뉘어 있으니 일단 유지
         const endpoint =
-          WRITTEN_ENDPOINT_BY_FILTER[filter] ??
-          WRITTEN_ENDPOINT_BY_FILTER[POST_FILTER.RECENT];
+          FILTER_TO_ENDPOINT[filter] ?? FILTER_TO_ENDPOINT.default;
 
-        const res = await api.get(endpoint, { params: { page: 0, size: 200 } });
-        const list = pickContent(res.data);
-
-        if (!alive) return;
-        setPosts(list);
+        const res = await api.get(endpoint, {
+          params: { page: 0, size: 2000 },
+        });
+        setPosts(pickContent(res.data));
       } catch (e) {
         console.error('내 자료 호출 실패:', e);
-        if (!alive) return;
         setError('자료를 불러오는 중 문제가 발생했습니다.');
         setPosts([]);
       } finally {
-        if (alive) setLoading(false);
+        setLoading(false);
       }
     };
 
     fetchMyPosts();
-    return () => {
-      alive = false;
-    };
   }, [filter]);
 
+  // ✅ 프론트 정렬/검색 (MyData는 today/week/year 안 써도 됨)
   const displayPosts = useMemo(() => {
-    const kw = keyword.trim().toLowerCase();
-    if (!kw) return posts;
-    return posts.filter((p) => (p.title ?? '').toLowerCase().includes(kw));
-  }, [posts, keyword]);
+    return applyClientSortAndFilter(posts, { filter, keyword });
+  }, [posts, filter, keyword]);
 
   return (
     <Layout>
@@ -98,7 +82,7 @@ export default function MyData() {
             <div className="mt-[36.5px]">
               <div className="mb-[36px] flex items-center justify-between pr-[58px] pl-[32px]">
                 <h3 className="text-[24px] font-semibold text-white">
-                  {keyword ? `“${keyword}” 검색결과` : getFilterLabel(filter)}
+                  {keyword ? `“${keyword}” 검색결과` : ''}
                 </h3>
                 <button
                   onClick={() => setIsModalOpen((v) => !v)}
@@ -126,22 +110,17 @@ export default function MyData() {
                   </div>
                 ) : (
                   <div className="grid max-w-fit grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
-                    {displayPosts.map((item) => {
-                      const postId = item?.postId ?? item?.id;
-                      return (
-                        <TimelineCard
-                          key={
-                            postId ?? `${item?.title}-${item?.createAt ?? ''}`
-                          }
-                          item={item}
-                          onClick={() =>
-                            navigate(`/posts/${postId}`, {
-                              state: { post: item },
-                            })
-                          }
-                        />
-                      );
-                    })}
+                    {displayPosts.map((item) => (
+                      <TimelineCard
+                        key={item.postId ?? item.id}
+                        item={item}
+                        onClick={() =>
+                          navigate(`/posts/${item.postId ?? item.id}`, {
+                            state: { post: item },
+                          })
+                        }
+                      />
+                    ))}
                   </div>
                 )}
               </div>
@@ -162,8 +141,8 @@ export default function MyData() {
               style={{ top: '201px', right: '72px' }}
             >
               <FilterModal
-                onFilterChange={(raw) => {
-                  setFilter(normalizeFilterKey(raw));
+                onFilterChange={(newFilter) => {
+                  setFilter(newFilter); // ✅ 저장됨
                   setIsModalOpen(false);
                 }}
               />

@@ -1,23 +1,13 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import TimelineCard from '../components/TimelineCard';
 import SearchInput from '../components/Search/SearchInput';
 import FilterModal from '../components/FilterModal';
 import FilterIcon from '../assets/icon/filter.svg';
+
 import { getBookmarkedPosts } from '../api/posts';
-import usePersistedState from '../utils/usePersistedState';
-
-import {
-  POST_FILTER,
-  normalizeFilterKey,
-  getFilterLabel,
-} from '../utils/postFilters';
-
-function pickContent(data) {
-  if (Array.isArray(data)) return data;
-  return data?.content ?? data?.posts ?? [];
-}
+import { applyClientSortAndFilter } from '../utils/postClientSort';
 
 export default function Bookmark() {
   const navigate = useNavigate();
@@ -26,11 +16,9 @@ export default function Bookmark() {
 
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = usePersistedState(
-    'filter:bookmark',
-    POST_FILTER.RECENT,
-    'local',
-  );
+
+  // ✅ 필터 유지
+  const [filter, setFilter] = useState('recent');
 
   useEffect(() => {
     let alive = true;
@@ -38,11 +26,16 @@ export default function Bookmark() {
     const fetchBookmarks = async () => {
       try {
         setLoading(true);
-        const data = await getBookmarkedPosts(filter, { page: 0, size: 200 });
-        const list = pickContent(data);
+
+        // ✅ 많이 가져오고(정렬은 프론트에서)
+        const data = await getBookmarkedPosts('recent', {
+          size: 2000,
+          page: 0,
+        });
+        const fetched = Array.isArray(data) ? data : (data?.content ?? []);
 
         if (!alive) return;
-        setPosts(list);
+        setPosts(fetched);
       } catch (err) {
         console.error('즐겨찾기 목록 호출 실패:', err);
         // 실패 시 기존 posts 유지
@@ -55,13 +48,12 @@ export default function Bookmark() {
     return () => {
       alive = false;
     };
-  }, [filter]);
+  }, []);
 
+  // ✅ 프론트 정렬/필터/검색 적용
   const displayPosts = useMemo(() => {
-    const kw = keyword.trim().toLowerCase();
-    if (!kw) return posts;
-    return posts.filter((p) => (p.title ?? '').toLowerCase().includes(kw));
-  }, [posts, keyword]);
+    return applyClientSortAndFilter(posts, { filter, keyword });
+  }, [posts, filter, keyword]);
 
   return (
     <Layout>
@@ -99,10 +91,10 @@ export default function Bookmark() {
             <div className="mt-[36.5px]">
               <div className="mb-[36px] flex items-center justify-between pr-[58px] pl-[32px]">
                 <h3 className="text-[24px] font-semibold text-white">
-                  {keyword ? `“${keyword}” 검색결과` : getFilterLabel(filter)}
+                  {keyword ? `“${keyword}” 검색결과` : ''}
                 </h3>
                 <button
-                  onClick={() => setIsModalOpen((v) => !v)}
+                  onClick={() => setIsModalOpen(!isModalOpen)}
                   className="z-10 flex items-center justify-center p-1 transition-opacity hover:opacity-70"
                   type="button"
                 >
@@ -134,9 +126,7 @@ export default function Bookmark() {
                         const postId = item?.postId ?? item?.id;
                         return (
                           <TimelineCard
-                            key={
-                              postId ?? `${item?.title}-${item?.createAt ?? ''}`
-                            }
+                            key={postId}
                             item={item}
                             onClick={() =>
                               navigate(`/posts/${postId}`, {
@@ -151,6 +141,7 @@ export default function Bookmark() {
                 )}
               </div>
             </div>
+
             <div className="h-[100px]" />
           </div>
         </div>
@@ -166,8 +157,8 @@ export default function Bookmark() {
               style={{ top: '201px', right: '72px' }}
             >
               <FilterModal
-                onFilterChange={(raw) => {
-                  setFilter(normalizeFilterKey(raw));
+                onFilterChange={(newFilter) => {
+                  setFilter(newFilter); // ✅ 저장까지 됨
                   setIsModalOpen(false);
                 }}
               />

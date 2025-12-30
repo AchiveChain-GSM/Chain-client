@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import TimelineCard from '../components/TimelineCard';
@@ -6,19 +6,16 @@ import SearchInput from '../components/Search/SearchInput';
 import FilterModal from '../components/FilterModal';
 import FilterIcon from '../assets/icon/filter.svg';
 import api from '../api/axios';
-import usePersistedState from '../utils/usePersistedState';
 
-import {
-  POST_FILTER,
-  normalizeFilterKey,
-  getFilterLabel,
-} from '../utils/postFilters';
-import { applyDateFilter } from '../utils/dateFilters';
+import { applyClientSortAndFilter } from '../utils/postClientSort';
 
-const LIST_ENDPOINT_BY_FILTER = {
-  [POST_FILTER.RECENT]: '/api/posts/recent',
-  [POST_FILTER.LIKES]: '/api/posts/popular',
-  [POST_FILTER.VIEWS]: '/api/posts/most-view',
+const FILTERS = {
+  RECENT: 'recent',
+  LIKES: 'likes',
+  VIEWS: 'views',
+  TODAY: 'today',
+  WEEK: 'week',
+  YEAR: 'year',
 };
 
 function pickList(data) {
@@ -33,63 +30,49 @@ export default function Search() {
 
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
- const [filter, setFilter] = usePersistedState(
-   'filter:search',
-   POST_FILTER.RECENT,
-   'local',
- );
 
+  // ✅ 필터 유지
+
+  const [filter, setFilter] = useState(FILTERS.RECENT);
   useEffect(() => {
     let alive = true;
 
     const fetchPosts = async () => {
       try {
         setLoading(true);
-
         const kw = keyword.trim();
+
         const commonParams = { page: 0, size: 2000 };
 
-        // 1) 검색어 있으면 검색 API
+        // 1) 검색어가 있으면 search API
         if (kw) {
           const res = await api.get('/api/posts/search', {
-            params: { keyword: kw, ...commonParams },
+            params: { keyword: kw, q: kw, query: kw, ...commonParams },
           });
           if (!alive) return;
           setPosts(pickList(res.data));
           return;
         }
 
-        // 2) 검색어 없으면 필터별 목록 endpoint
-        const baseKey =
-          filter === POST_FILTER.TODAY ||
-          filter === POST_FILTER.WEEK ||
-          filter === POST_FILTER.YEAR
-            ? POST_FILTER.RECENT
-            : filter;
-
-        const endpoint =
-          LIST_ENDPOINT_BY_FILTER[baseKey] ??
-          LIST_ENDPOINT_BY_FILTER[POST_FILTER.RECENT];
-
-        const res = await api.get(endpoint, { params: commonParams });
-        let list = pickList(res.data);
-
-        // 3) 날짜 필터는 클라 적용
-        list = applyDateFilter(list, filter);
-
+        // 2) 검색어 없으면 그냥 recent로 많이 가져오기
+        const res = await api.get('/api/posts/recent', {
+          params: commonParams,
+        });
         if (!alive) return;
-        setPosts(list);
+        setPosts(pickList(res.data));
       } catch (err) {
         const status = err?.response?.status;
-        console.error('검색 데이터 로딩 실패:', status, err?.response?.data ?? err);
+        console.error(
+          '검색 데이터 로딩 실패:',
+          status,
+          err?.response?.data ?? err,
+        );
 
         if (status === 401) {
           navigate('/login');
           return;
         }
-
-        if (!alive) return;
-        setPosts([]);
+        if (alive) setPosts([]);
       } finally {
         if (alive) setLoading(false);
       }
@@ -99,12 +82,12 @@ export default function Search() {
     return () => {
       alive = false;
     };
-  }, [filter, keyword, navigate]);
+  }, [keyword, navigate]);
 
-  const titleText = useMemo(() => {
-    if (keyword.trim()) return `“${keyword.trim()}” 검색결과`;
-    return getFilterLabel(filter);
-  }, [keyword, filter]);
+  // ✅ 정렬/날짜필터/검색 모두 프론트 처리
+  const displayPosts = useMemo(() => {
+    return applyClientSortAndFilter(posts, { filter, keyword });
+  }, [posts, filter, keyword]);
 
   return (
     <Layout>
@@ -139,10 +122,10 @@ export default function Search() {
             <div className="mt-[36.5px]">
               <div className="mb-[36px] flex items-center justify-between pr-[58px] pl-[32px]">
                 <h3 className="text-[24px] font-semibold text-white">
-                  {titleText}
+                  {keyword ? `“${keyword}” 검색결과` : '전체 자료'}
                 </h3>
                 <button
-                  onClick={() => setIsModalOpen((v) => !v)}
+                  onClick={() => setIsModalOpen(!isModalOpen)}
                   className="z-10 flex items-center justify-center p-1 transition-opacity hover:opacity-70"
                   type="button"
                 >
@@ -159,26 +142,23 @@ export default function Search() {
                   <div className="mt-[60px] text-center text-zinc-500">
                     데이터 로딩 중...
                   </div>
-                ) : posts.length === 0 ? (
+                ) : displayPosts.length === 0 ? (
                   <div className="mt-[60px] text-center text-zinc-600">
                     자료가 존재하지 않습니다
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
-                    {posts.map((item) => {
-                      const postId = item?.postId ?? item?.id;
-                      return (
-                        <TimelineCard
-                          key={postId ?? `${item?.title}-${item?.createAt ?? ''}`}
-                          item={item}
-                          onClick={() =>
-                            navigate(`/posts/${postId}`, {
-                              state: { post: item },
-                            })
-                          }
-                        />
-                      );
-                    })}
+                    {displayPosts.map((item) => (
+                      <TimelineCard
+                        key={item.postId ?? item.id}
+                        item={item}
+                        onClick={() =>
+                          navigate(`/posts/${item.postId ?? item.id}`, {
+                            state: { post: item },
+                          })
+                        }
+                      />
+                    ))}
                   </div>
                 )}
               </div>
@@ -199,8 +179,8 @@ export default function Search() {
               style={{ top: '201px', right: '72px' }}
             >
               <FilterModal
-                onFilterChange={(raw) => {
-                  setFilter(normalizeFilterKey(raw));
+                onFilterChange={(newFilter) => {
+                  setFilter(newFilter); // ✅ 저장됨
                   setIsModalOpen(false);
                 }}
               />

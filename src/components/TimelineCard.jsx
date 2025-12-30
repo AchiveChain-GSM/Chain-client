@@ -64,7 +64,7 @@ export default function TimelineCard({ item, post, onClick }) {
         {tagsToShow.map((tag, index) => (
           <span
             key={index}
-            className="flex h-[22px] min-w-[31px] items-center justify-center rounded-full bg-[#2E2E2E] px-[10px] text-[12px] text-[#FFFFFF]"
+            className="flex h-[22px] min-w-[31px] items-center justify-center rounded-xl py-2 bg-[#2E2E2E] px-[10px] text-[12px] text-[#FFFFFF]"
           >
             {tag}
           </span>

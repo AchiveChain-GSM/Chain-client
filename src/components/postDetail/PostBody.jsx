@@ -94,7 +94,7 @@ export default function PostBody({ postData, onToggleLike, onToggleBookmark }) {
         {tags.map((tag, i) => (
           <span
             key={`${tag}-${i}`}
-            className="rounded-lg bg-[#2A2A2A] px-3 py-1.5 text-[13px] text-zinc-400"
+            className="rounded-xl bg-[#2A2A2A] px-3 py-1.5 text-[13px] text-zinc-400"
           >
             {tag}
           </span>

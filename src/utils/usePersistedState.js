@@ -1,4 +1,3 @@
-// src/hooks/usePersistedState.js
 import { useEffect, useState } from 'react';
 
 export default function usePersistedState(key, defaultValue, storage = 'local') {
