@@ -1,41 +1,30 @@
+// src/pages/Findps.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 
-// 프로젝트 전역 설정(App.jsx)을 사용하므로 중복된 서버 주소 변수는 제거했습니다.
 const EMAIL_DOMAIN = '@gsm.hs.kr';
 
-const STYLES = {
-  baseText: {
-    fontFamily: 'Pretendard, sans-serif',
-    color: '#FFFFFF',
-    fontWeight: '400',
-    lineHeight: '1.4',
-    letterSpacing: '-0.02em',
-  },
-  commonInput: {
-    height: '48px',
-    backgroundColor: '#191919',
-    border: 'none',
-    borderRadius: '8px',
-    padding: '0 16px',
-    color: '#FFF',
-    fontSize: '16px',
-    outline: 'none',
-    fontFamily: 'Pretendard',
-    boxSizing: 'border-box',
-  },
-};
+const inputBase =
+  "h-12 rounded-[8px] bg-[#191919] px-4 text-[16px] text-white outline-none font-['Pretendard'] placeholder:text-zinc-500";
 
-const Findps = () => {
+export default function Findps() {
   const navigate = useNavigate();
+
   const [step, setStep] = useState(1);
+
   const [email, setEmail] = useState('');
   const [authCode, setAuthCode] = useState('');
+  const [mailSent, setMailSent] = useState(false);
+
   const [errorMessage, setErrorMessage] = useState('');
+
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  /* =========================
+   * STEP 1: 이메일 인증
+   * ========================= */
   const handleEmailAuth = async () => {
     if (!email.endsWith(EMAIL_DOMAIN)) {
       setErrorMessage(
@@ -43,38 +32,58 @@ const Findps = () => {
       );
       return;
     }
+
     try {
-      // 주소를 '/api/auth/...' 형태로 단축하여 전역 설정을 따릅니다.
-      await axios.post('/api/auth/send-email', { email });
+      await api.post('/api/auth/send-email', { email });
       setErrorMessage('');
-      alert('인증번호가 발송되었습니다.');
+      setMailSent(true);
+      alert('메일이 발송되었습니다.');
     } catch (error) {
       setErrorMessage(
-        error.response?.data?.message || '인증번호 발송에 실패했습니다.',
+        error.response?.data?.message || '메일 발송에 실패했습니다.',
       );
     }
   };
 
   const handleVerifyNext = async () => {
+    if (!authCode.trim()) {
+      setErrorMessage('토큰을 입력해주세요.');
+      return;
+    }
+
     try {
-      await axios.post('/api/auth/verify-email', {
-        email: email,
-        code: authCode,
+      setErrorMessage(''); // 이전 에러 초기화
+      // ✅ 서버 명세에 따라 'code' 대신 'token'으로 보낼 수도 있습니다. (VerifyEmail.jsx 참고)
+      await api.post('/api/auth/verify-email', {
+        email: email.trim(),
+        token: authCode.trim(), // 또는 백엔드 스펙에 따라 code: authCode
       });
-      setErrorMessage('');
+
+      // ✅ 인증 성공 시에만 다음 단계로
       setStep(2);
+      setErrorMessage('');
     } catch (error) {
-      setErrorMessage(
-        error.response?.data?.message || '인증번호가 일치하지 않습니다.',
-      );
+      // ✅ 여기서 에러를 잡아서 화면에 표시해야 합니다.
+      const status = error.response?.status;
+      const msg = error.response?.data?.message || error.response?.data?.body;
+
+      if (status === 401) {
+        setErrorMessage('토큰이 일치하지 않습니다.');
+      } else {
+        setErrorMessage(msg || '토큰 확인 중 오류가 발생했습니다.');
+      }
+
+      // ⚠️ 여기서 navigate('/') 등을 호출하지 않도록 주의하세요.
     }
   };
 
+  /* =========================
+   * STEP 2: 비밀번호 재설정
+   * ========================= */
   const validatePassword = (pw) => {
     const hasLetter = /[a-z]/i.test(pw);
     const hasNumber = /[0-9]/.test(pw);
-    const isLongEnough = pw.length >= 8;
-    return hasLetter && hasNumber && isLongEnough;
+    return hasLetter && hasNumber && pw.length >= 8;
   };
 
   const handleResetComplete = async () => {
@@ -84,13 +93,14 @@ const Findps = () => {
       );
       return;
     }
+
     if (password !== confirmPassword) {
       setErrorMessage('비밀번호가 일치하지 않습니다');
       return;
     }
 
     try {
-      await axios.post('/api/auth/change-password', {
+      await api.post('/api/auth/change-password', {
         email,
         password,
       });
@@ -103,261 +113,88 @@ const Findps = () => {
     }
   };
 
+  const canNext = authCode.length > 0;
+
   return (
-    <div
-      className="flex min-h-screen w-full flex-col items-center"
-      style={{ backgroundColor: '#191919', paddingTop: '15vh' }}
-    >
-      <div
-        style={{
-          marginBottom: '48px',
-          height: '42px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <h1 style={{ ...STYLES.baseText, fontSize: '32px' }}>
+    <div className="flex min-h-screen w-full flex-col items-center bg-[#191919] pt-[15vh]">
+      <div className="mb-12 flex h-[42px] items-center justify-center">
+        <h1 className="text-[32px] text-white">
           {step === 1 ? '비밀번호 찾기' : '비밀번호 재설정'}
         </h1>
       </div>
 
-      <div className="flex w-full flex-col items-center">
-        {step === 1 && (
-          <div
-            style={{
-              width: '559px',
-              height: '308px',
-              backgroundColor: '#1D1D1D',
-              borderRadius: '12px',
-              padding: '24px',
-              boxSizing: 'border-box',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              position: 'relative',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                gap: '12px',
-                width: '511px',
-                marginBottom: '12px',
-              }}
-            >
-              <input
-                type="text"
-                placeholder="이메일"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                style={{ ...STYLES.commonInput, width: '393px' }}
-              />
-              <button
-                onClick={handleEmailAuth}
-                style={{
-                  width: '106px',
-                  height: '48px',
-                  backgroundColor: '#E2E2E2',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  fontFamily: 'Pretendard',
-                }}
-              >
-                이메일 인증
-              </button>
-            </div>
+      {/* STEP 1 */}
+      {step === 1 && (
+        <div className="relative h-[308px] w-[559px] rounded-[12px] bg-[#1D1D1D] p-6">
+          <div className="mb-3 flex gap-3">
             <input
-              type="text"
-              placeholder="인증번호"
-              value={authCode}
-              onChange={(e) => setAuthCode(e.target.value)}
-              style={{ ...STYLES.commonInput, width: '511px' }}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={`${inputBase} w-[393px]`}
+              placeholder="이메일"
             />
-            <div
-              style={{
-                width: '511px',
-                height: '20px',
-                marginTop: '10px',
-                textAlign: 'right',
-              }}
+            <button
+              onClick={handleEmailAuth}
+              className="h-12 w-[106px] rounded-[8px] bg-white text-black"
+              type="button"
             >
-              {errorMessage && (
-                <span
-                  style={{
-                    color: '#FF5050',
-                    fontSize: '14px',
-                    fontFamily: 'Pretendard',
-                  }}
-                >
-                  {errorMessage}
-                </span>
-              )}
-            </div>
-            <div
-              style={{
-                position: 'absolute',
-                bottom: '24px',
-                width: '511px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-                alignItems: 'center',
-              }}
-            >
-              <button
-                onClick={handleVerifyNext}
-                disabled={authCode.length === 0}
-                style={{
-                  width: '511px',
-                  height: '48px',
-                  borderRadius: '8px',
-                  cursor: authCode.length > 0 ? 'pointer' : 'not-allowed',
-                  backgroundColor: authCode.length > 0 ? '#E2E2E2' : '#4E4E4E',
-                  color: authCode.length > 0 ? '#000000' : '#888888',
-                  border: 'none',
-                  fontSize: '16px',
-                  fontFamily: 'Pretendard',
-                }}
-              >
-                다음
-              </button>
-              <button
-                onClick={() => navigate('/login')}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#FFF',
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  fontFamily: 'Pretendard',
-                }}
-              >
-                이전으로
-              </button>
-            </div>
+              이메일 인증
+            </button>
           </div>
-        )}
 
-        {step === 2 && (
-          <div
-            style={{
-              width: '559px',
-              height: '308px',
-              backgroundColor: '#1D1D1D',
-              borderRadius: '12px',
-              padding: '24px',
-              boxSizing: 'border-box',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              position: 'relative',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-                width: '511px',
-              }}
+          <input
+            value={authCode}
+            onChange={(e) => setAuthCode(e.target.value)}
+            disabled={!mailSent}
+            className={`${inputBase} w-full ${mailSent ? '' : 'opacity-50'}`}
+          />
+
+          <div className="mt-2 text-right text-[#FF5050]">{errorMessage}</div>
+
+          <div className="absolute bottom-6 w-full px-6">
+            <button
+              onClick={handleVerifyNext}
+              disabled={!canNext}
+              className="h-12 w-full rounded-[8px] bg-[#E2E2E2] text-black disabled:bg-[#4E4E4E] disabled:text-[#888]"
+              type="button"
             >
-              <input
-                type="password"
-                placeholder="비밀번호"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setErrorMessage('');
-                }}
-                style={{ ...STYLES.commonInput, width: '511px' }}
-              />
-              <input
-                type="password"
-                placeholder="비밀번호 확인"
-                value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value);
-                  setErrorMessage('');
-                }}
-                style={{ ...STYLES.commonInput, width: '511px' }}
-              />
-            </div>
-            <div
-              style={{
-                width: '511px',
-                height: '40px',
-                marginTop: '10px',
-                textAlign: 'right',
-              }}
-            >
-              {errorMessage && (
-                <span
-                  style={{
-                    color: '#FF5050',
-                    fontSize: '14px',
-                    fontFamily: 'Pretendard',
-                    display: 'block',
-                  }}
-                >
-                  {errorMessage}
-                </span>
-              )}
-            </div>
-            <div
-              style={{
-                position: 'absolute',
-                bottom: '24px',
-                width: '511px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-                alignItems: 'center',
-              }}
-            >
-              <button
-                onClick={handleResetComplete}
-                disabled={!password || !confirmPassword}
-                style={{
-                  width: '511px',
-                  height: '48px',
-                  borderRadius: '8px',
-                  cursor:
-                    password && confirmPassword ? 'pointer' : 'not-allowed',
-                  backgroundColor:
-                    password && confirmPassword ? '#E2E2E2' : '#4E4E4E',
-                  color: password && confirmPassword ? '#000000' : '#888888',
-                  border: 'none',
-                  fontSize: '16px',
-                  fontFamily: 'Pretendard',
-                }}
-              >
-                비밀번호 재설정 완료
-              </button>
-              <button
-                onClick={() => {
-                  setStep(1);
-                  setErrorMessage('');
-                }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#FFF',
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  fontFamily: 'Pretendard',
-                }}
-              >
-                이전으로
-              </button>
-            </div>
+              다음
+            </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* STEP 2 */}
+      {step === 2 && (
+        <div className="relative h-[308px] w-[559px] rounded-[12px] bg-[#1D1D1D] p-6">
+          <input
+            type="password"
+            placeholder="비밀번호"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className={`${inputBase} mb-3 w-full`}
+          />
+          <input
+            type="password"
+            placeholder="비밀번호 확인"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className={`${inputBase} w-full`}
+          />
+
+          <div className="mt-2 text-right text-[#FF5050]">{errorMessage}</div>
+
+          <div className="absolute bottom-6 w-full px-6">
+            <button
+              onClick={handleResetComplete}
+              className="h-12 w-full rounded-[8px] bg-[#E2E2E2] text-black"
+              type="button"
+            >
+              비밀번호 재설정 완료
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
-};
-
-export default Findps;
+}

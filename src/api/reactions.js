@@ -1,16 +1,20 @@
 // src/api/reactions.js
 import api from './axios';
 
-export async function togglePostLike(postId) {
-  return api.post(`/api/posts/${postId}/likes`);
-}
-
-export async function togglePostBookmark(postId) {
-  return api.post(`/api/posts/${postId}/bookmark`);
-}
-
-/**
- * (선택) 일관된 이름이 필요하면 alias도 같이 제공 가능
- * export const toggleLike = togglePostLike;
- * export const toggleBookmark = togglePostBookmark;
+/** 좋아요 토글
+ * POST /api/posts/{postId}/likes
+ * Response: 200 OK
  */
+export async function togglePostLike(postId) {
+  const res = await api.post(`/api/posts/${postId}/likes`);
+  return res.data;
+}
+
+/** 북마크 토글
+ * POST /api/posts/{postId}/bookmark
+ * Response: 200 OK
+ */
+export async function togglePostBookmark(postId) {
+  const res = await api.post(`/api/posts/${postId}/bookmark`);
+  return res.data;
+}

@@ -25,7 +25,7 @@ function SidebarItem({ label, icon, to, end = false }) {
           'flex w-full items-center gap-3',
           'h-11 px-4',
           'rounded-lg transition-colors',
-          'text-[15px] font-light text-white',
+          'text-[16px] font-normal text-white',
           isActive ? 'bg-select' : 'hover:bg-hover',
         ].join(' ')
       }
@@ -45,7 +45,7 @@ function AddButton({ to }) {
           'flex w-full items-center gap-3',
           'h-11 px-4',
           'rounded-lg transition-colors',
-          'text-[15px] font-light text-black',
+          'text-[16px] font-normal text-black',
           isActive ? 'bg-white/10' : 'bg-white',
         ].join(' ')
       }

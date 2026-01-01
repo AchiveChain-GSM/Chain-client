@@ -14,6 +14,8 @@ export default function CalendarMonth({
   selected,
   setSelected,
   postExistedDays,
+  onSelectDays, // ✅ 여러 날짜 선택 상태( {year, month, days[]} )
+  onSelectDay,  // ✅ 단일 날짜 클릭( Date )
 }) {
   const monthSelected = selected.year === year && selected.month === month;
 
@@ -36,7 +38,10 @@ export default function CalendarMonth({
   const toggleDay = (day) => {
     setSelected((prev) => {
       if (prev.year !== year || prev.month !== month) {
-        return { year, month, days: [day] };
+        const next = { year, month, days: [day] };
+        onSelectDays?.(next);
+        onSelectDay?.(new Date(year, month - 1, day));
+        return next;
       }
 
       const isSelected = prev.days.includes(day);
@@ -44,10 +49,10 @@ export default function CalendarMonth({
         ? prev.days.filter((d) => d !== day)
         : [...prev.days, day];
 
-      return {
-        ...prev,
-        days: nextDays,
-      };
+      const next = { ...prev, days: nextDays };
+      onSelectDays?.(next);
+      onSelectDay?.(new Date(year, month - 1, day));
+      return next;
     });
   };
 

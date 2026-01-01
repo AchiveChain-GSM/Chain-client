@@ -1,74 +1,93 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import TimelineCard from '../components/TimelineCard';
 import SearchInput from '../components/Search/SearchInput';
 import FilterModal from '../components/FilterModal';
 import FilterIcon from '../assets/icon/filter.svg';
-import axios from 'axios';
+import api from '../api/axios';
+
+import { applyClientSortAndFilter } from '../utils/postClientSort';
 
 const FILTERS = {
   RECENT: 'recent',
-  POPULAR: 'popular',
-  VIEWS: 'most-view',
+  LIKES: 'likes',
+  VIEWS: 'views',
+  TODAY: 'today',
+  WEEK: 'week',
+  YEAR: 'year',
 };
+
+function pickList(data) {
+  if (Array.isArray(data)) return data;
+  return data?.content ?? data?.posts ?? [];
+}
 
 export default function Search() {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // ✅ 테스트를 위해 초기값에 가짜 데이터를 넣었습니다.
-  const [posts, setPosts] = useState([
-    {
-      postId: 'test-1',
-      title: '서버 연결 전 테스트 자료 1',
-      author: '개발자민선',
-      content: '이것은 첫 번째 테스트용 본문 내용입니다.',
-      tags: ['React', '테스트'],
-      firstImageUrl: 'https://picsum.photos/400/240?random=1',
-    },
-    {
-      postId: 'test-2',
-      title: '상세보기 연결 확인용 자료 2',
-      author: 'Gemini',
-      content: '카드를 클릭하면 상세 페이지로 잘 이동하는지 확인하세요!',
-      tags: ['UI', '연동확인'],
-      firstImageUrl: 'https://picsum.photos/400/240?random=2',
-    },
-  ]);
-
+  const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState(FILTERS.RECENT);
 
+  // ✅ 필터 유지
+
+  const [filter, setFilter] = useState(FILTERS.RECENT);
   useEffect(() => {
+    let alive = true;
+
     const fetchPosts = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`/api/posts/${filter}`);
-        const fetchedData = Array.isArray(response.data)
-          ? response.data
-          : response.data.content || [];
+        const kw = keyword.trim();
 
-        // 서버에 실제 데이터가 있다면 서버 데이터를 쓰고, 없으면 지금은 더미를 유지합니다.
-        if (fetchedData.length > 0) {
-          setPosts(fetchedData);
+        const commonParams = { page: 0, size: 2000 };
+
+        // 1) 검색어가 있으면 search API
+        if (kw) {
+          const res = await api.get('/api/posts/search', {
+            params: { keyword: kw, q: kw, query: kw, ...commonParams },
+          });
+          if (!alive) return;
+          setPosts(pickList(res.data));
+          return;
         }
+
+        // 2) 검색어 없으면 그냥 recent로 많이 가져오기
+        const res = await api.get('/api/posts/recent', {
+          params: commonParams,
+        });
+        if (!alive) return;
+        setPosts(pickList(res.data));
       } catch (err) {
-        console.error('검색 데이터 로딩 실패 (서버가 아직 준비 안됨):', err);
-        // 에러가 나도 테스트 데이터는 유지되도록 setPosts([])를 잠시 주석처리 하셔도 됩니다.
+        const status = err?.response?.status;
+        console.error(
+          '검색 데이터 로딩 실패:',
+          status,
+          err?.response?.data ?? err,
+        );
+
+        if (status === 401) {
+          navigate('/login');
+          return;
+        }
+        if (alive) setPosts([]);
       } finally {
-        setLoading(false);
+        if (alive) setLoading(false);
       }
     };
+
     fetchPosts();
-  }, [filter]);
+    return () => {
+      alive = false;
+    };
+  }, [keyword, navigate]);
 
-  const searchResults = posts.filter((item) =>
-    item.title?.toLowerCase().includes(keyword.toLowerCase()),
-  );
-
-  const displayPosts = keyword ? searchResults : posts;
+  // ✅ 정렬/날짜필터/검색 모두 프론트 처리
+  const displayPosts = useMemo(() => {
+    return applyClientSortAndFilter(posts, { filter, keyword });
+  }, [posts, filter, keyword]);
 
   return (
     <Layout>
@@ -103,11 +122,12 @@ export default function Search() {
             <div className="mt-[36.5px]">
               <div className="mb-[36px] flex items-center justify-between pr-[58px] pl-[32px]">
                 <h3 className="text-[24px] font-semibold text-white">
-                  {keyword ? `“${keyword}” 검색결과` : '전체 자료 (테스트용)'}
+                  {keyword ? `“${keyword}” 검색결과` : '전체 자료'}
                 </h3>
                 <button
                   onClick={() => setIsModalOpen(!isModalOpen)}
                   className="z-10 flex items-center justify-center p-1 transition-opacity hover:opacity-70"
+                  type="button"
                 >
                   <img
                     src={FilterIcon}
@@ -118,7 +138,7 @@ export default function Search() {
               </div>
 
               <div className="px-[32px]">
-                {loading && posts.length === 0 ? (
+                {loading ? (
                   <div className="mt-[60px] text-center text-zinc-500">
                     데이터 로딩 중...
                   </div>
@@ -130,10 +150,10 @@ export default function Search() {
                   <div className="grid grid-cols-1 gap-[28px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
                     {displayPosts.map((item) => (
                       <TimelineCard
-                        key={item.postId}
+                        key={item.postId ?? item.id}
                         item={item}
                         onClick={() =>
-                          navigate(`/post/${item.postId}`, {
+                          navigate(`/posts/${item.postId ?? item.id}`, {
                             state: { post: item },
                           })
                         }
@@ -143,6 +163,7 @@ export default function Search() {
                 )}
               </div>
             </div>
+
             <div className="h-[100px]" />
           </div>
         </div>
@@ -159,7 +180,7 @@ export default function Search() {
             >
               <FilterModal
                 onFilterChange={(newFilter) => {
-                  setFilter(newFilter);
+                  setFilter(newFilter); // ✅ 저장됨
                   setIsModalOpen(false);
                 }}
               />

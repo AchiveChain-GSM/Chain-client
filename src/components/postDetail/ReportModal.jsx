@@ -1,7 +1,8 @@
+// src/components/postDetail/ReportModal.jsx
 import { useState } from 'react';
-import checkIcon from '../../assets/icon/check.svg'; // 경로 확인 필요
-import closeIcon from '../../assets/uploadIcon/x.svg'; // 경로 확인 필요
-import { reportPost } from '../../api/posts'; // ✅ API 함수 import
+import checkIcon from '../../assets/icon/check.svg';
+import closeIcon from '../../assets/uploadIcon/x.svg';
+import { reportPost } from '../../api/reports'; 
 
 export default function ReportModal({ postId, onClose }) {
   const REPORT_REASONS = [
@@ -16,71 +17,65 @@ export default function ReportModal({ postId, onClose }) {
     '기타',
   ];
 
-  const [selectedReportReasons, setSelectedReportReasons] = useState([]);
-  const [reportEtcText, setReportEtcText] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedReasons, setSelectedReasons] = useState([]);
+  const [etcText, setEtcText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const toggleReportReason = (reason) => {
-    setSelectedReportReasons((prev) => {
+  const toggleReason = (reason) => {
+    setSelectedReasons((prev) => {
       const exists = prev.includes(reason);
       const next = exists
         ? prev.filter((r) => r !== reason)
         : [...prev, reason];
-
-      if (exists && reason === '기타') setReportEtcText('');
+      if (exists && reason === '기타') setEtcText('');
       return next;
     });
   };
 
-  const handleReportSubmit = async () => {
-    // 1. 유효성 검사
-    if (selectedReportReasons.length === 0) {
+  const handleSubmit = async () => {
+    if (selectedReasons.length === 0) {
       alert('신고 사유를 1개 이상 선택해주세요.');
       return;
     }
-
-    if (selectedReportReasons.includes('기타') && !reportEtcText.trim()) {
+    if (selectedReasons.includes('기타') && !etcText.trim()) {
       alert('기타 사유를 입력해주세요.');
       return;
     }
-    
-    if (isSubmitting) return;
+    if (submitting) return;
 
-    // 2. 데이터 가공
-    const titleParam = selectedReportReasons.join(', ');
-    const descParam = reportEtcText.trim() || titleParam;
-
-    const payload = {
-      title: titleParam,
-      description: descParam,
-    };
+    const title = selectedReasons.includes('기타')
+      ? '기타 사유 포함 신고'
+      : '일반 신고';
+    const description = selectedReasons.includes('기타')
+      ? `[사유: ${selectedReasons.join(', ')}] 상세: ${etcText}`
+      : selectedReasons.join(', ');
 
     try {
-      setIsSubmitting(true);
-      
-      // ✅ 3. axios API 호출로 교체
-      // fetch와 달리 응답 상태(status) 체크 로직을 직접 작성할 필요가 없습니다.
-      // (에러 발생 시 catch 블록으로 자동 이동됨)
-      await reportPost(postId, payload);
-
+      setSubmitting(true);
+      // ✅ 수정된 posts.js의 reportPost 호출
+      await reportPost(postId, { title, description });
       alert('신고가 정상적으로 접수되었습니다.');
-      onClose?.(); // 모달 닫기
-      
-    } catch (error) {
-      console.error(error);
-      // axios 에러 객체에서 서버 메시지가 있다면 보여줄 수도 있음
-      // alert(error.response?.data?.message || '신고 처리 중 오류가 발생했습니다.');
+      onClose?.();
+    } catch (e) {
+      console.error('[report fail]', e?.response?.status);
       alert('신고 처리 중 오류가 발생했습니다.');
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="w-[512px] rounded-2xl bg-[#1D1D1D] p-6 pb-4 shadow-2xl">
+    <div
+      className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      onClick={onClose} // ✅ 배경 클릭 닫기
+    >
+      <div
+        className="w-[512px] rounded-2xl bg-[#1D1D1D] p-6 pb-4 shadow-2xl"
+        onClick={(e) => e.stopPropagation()} // ✅ 내부 클릭은 닫히지 않게
+      >
         <div className="relative mb-4 flex items-center justify-center">
           <h3 className="text-lg font-bold text-white">자료 신고하기</h3>
+
           <button type="button" onClick={onClose} className="absolute right-0">
             <img
               src={closeIcon}
@@ -92,21 +87,17 @@ export default function ReportModal({ postId, onClose }) {
 
         <div className="mb-3 flex flex-col gap-2">
           {REPORT_REASONS.map((reason) => {
-            const checked = selectedReportReasons.includes(reason);
-
+            const checked = selectedReasons.includes(reason);
             return (
               <label
                 key={reason}
-                className={[
-                  'flex cursor-pointer items-center gap-3 rounded-lg px-4 py-3',
-                  'bg-[#2A2A2A] transition-colors hover:bg-[#333]',
-                ].join(' ')}
+                className="flex cursor-pointer items-center gap-3 rounded-lg bg-[#2A2A2A] px-4 py-3 transition-colors hover:bg-[#333]"
               >
                 <input
                   type="checkbox"
                   className="sr-only"
                   checked={checked}
-                  onChange={() => toggleReportReason(reason)}
+                  onChange={() => toggleReason(reason)}
                 />
                 <span className="flex h-4 w-4 items-center justify-center">
                   {checked && (
@@ -119,11 +110,11 @@ export default function ReportModal({ postId, onClose }) {
           })}
         </div>
 
-        {selectedReportReasons.includes('기타') && (
+        {selectedReasons.includes('기타') && (
           <div className="mb-6">
             <input
-              value={reportEtcText}
-              onChange={(e) => setReportEtcText(e.target.value)}
+              value={etcText}
+              onChange={(e) => setEtcText(e.target.value)}
               placeholder="기타 사유를 입력해주세요."
               className="h-[44px] w-full rounded-lg bg-[#191919] px-4 text-sm text-white outline-none"
             />
@@ -131,16 +122,17 @@ export default function ReportModal({ postId, onClose }) {
         )}
 
         <button
-          onClick={handleReportSubmit}
-          disabled={selectedReportReasons.length === 0 || isSubmitting}
+          type="button"
+          onClick={handleSubmit}
+          disabled={selectedReasons.length === 0 || submitting}
           className={[
             'mb-3 w-full rounded-lg py-3 text-sm font-medium transition-colors',
-            selectedReportReasons.length > 0
+            selectedReasons.length > 0
               ? 'bg-white text-black hover:bg-white/90'
               : 'cursor-not-allowed bg-white/10 text-zinc-500',
           ].join(' ')}
         >
-          {isSubmitting ? '처리 중...' : '신고 제출'}
+          {submitting ? '처리 중...' : '신고 제출'}
         </button>
       </div>
     </div>
